@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
-const swagger_1 = require("@nestjs/swagger");
 const app_module_1 = require("./modules/app.module");
+const swagger_1 = require("@nestjs/swagger");
 const swagger_helper_1 = require("./common/helpers/swagger.helper");
 const global_exception_filter_1 = require("./common/exeptions/global-exception.filter");
+const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const config = new swagger_1.DocumentBuilder()

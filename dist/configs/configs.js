@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const process = require("node:process");
 exports.default = () => ({
     app: {
         port: parseInt(process.env.APP_PORT) || 3000,
