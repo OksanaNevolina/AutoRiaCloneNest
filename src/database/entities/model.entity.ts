@@ -1,7 +1,8 @@
 import { TableNameEnum } from '../enums/table-name.enum';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import {Column, Entity, ManyToOne, OneToMany} from 'typeorm';
 import { BaseEntity } from './models/base.entity';
 import { BrandEntity } from './brand.entity';
+import {CarEntity} from "./car.entity";
 
 @Entity(TableNameEnum.MODEL)
 export class ModelEntity extends BaseEntity {
@@ -10,4 +11,7 @@ export class ModelEntity extends BaseEntity {
 
   @ManyToOne(() => BrandEntity, (brand) => brand.models)
   brand: BrandEntity;
+
+  @OneToMany(() => CarEntity, (car) => car.brand)
+  cars: CarEntity[];
 }
