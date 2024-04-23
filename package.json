@@ -8,7 +8,6 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "create:local:bucket": "ts-node ./src/scripts/create-local-bucket.ts",
     "start:docker:local": "docker compose --env-file ./environments/local.env -f ./docker-compose-local.yaml up --build",
     "start": "nest start",
     "start:dev": "nest start --watch -e \"node --env-file ./environments/local.env\"",
