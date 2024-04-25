@@ -2,8 +2,8 @@ import { Column, Entity, OneToMany } from 'typeorm';
 import { TableNameEnum } from '../enums/table-name.enum';
 import { BaseEntity } from './models/base.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
-import {AccountTypeEnum} from "../enums/account-type.enum";
-import {RoleEnum} from "../enums/role-enum";
+import { AccountTypeEnum } from '../enums/account-type.enum';
+import { RoleEnum } from '../enums/role-enum';
 
 @Entity(TableNameEnum.USERS)
 export class UserEntity extends BaseEntity {
@@ -20,18 +20,18 @@ export class UserEntity extends BaseEntity {
   status: boolean;
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: AccountTypeEnum,
     default: AccountTypeEnum.BASE,
   })
-  accountType: AccountTypeEnum
+  accountType: AccountTypeEnum;
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: RoleEnum,
     default: RoleEnum.SELLER,
   })
-  role: RoleEnum
+  role: RoleEnum;
 
   @OneToMany(() => RefreshTokenEntity, (entity) => entity.user)
   refreshTokens?: RefreshTokenEntity[];

@@ -1,4 +1,4 @@
-export enum AccountTypeEnum{
-    BASE = 'base',
-    PREMIUM ='premium'
+export enum AccountTypeEnum {
+  BASE = 'base',
+  PREMIUM = 'premium',
 }
