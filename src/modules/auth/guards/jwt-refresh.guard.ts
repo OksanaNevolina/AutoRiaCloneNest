@@ -1,7 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
-  Injectable,
+  Injectable, Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -26,11 +26,13 @@ export class JwtRefreshGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     const role = request.headers.role as RoleEnum;
+    Logger.log(role,refreshToken)
     const payload = await this.tokenService.checkToken(
       refreshToken,
       TokenType.REFRESH,
       role,
     );
+    Logger.log(payload)
     if (!payload) {
       throw new UnauthorizedException();
     }
@@ -46,7 +48,11 @@ export class JwtRefreshGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException();
     }
-    request.user = { user };
+    // request.user = { user };
+    request.user = {
+      userId: user.id,
+      email: user.email,
+    };
     return true;
   }
 }

@@ -8,6 +8,7 @@ import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { AuthService } from './services/auth.service';
 import { AuthCacheService } from './services/auth-cache.service';
 import { TokenService } from './services/token.service';
+import { UserService } from '../user/services/user.service';
 
 @Module({
   controllers: [AuthController],
@@ -20,6 +21,7 @@ import { TokenService } from './services/token.service';
     AuthService,
     AuthCacheService,
     TokenService,
+    UserService,
   ],
   exports: [AuthCacheService],
 })
