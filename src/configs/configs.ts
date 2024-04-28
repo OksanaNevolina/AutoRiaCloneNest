@@ -20,27 +20,27 @@ export default (): Config => ({
   },
   jwt: {
     sellerAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access secret seller',
+      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access_secret_seller',
     sellerAccessTokenExpiration:
       parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION) || 3600,
     sellerRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh secret seller',
+      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_seller',
     sellerRefreshTokenExpiration:
       parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
     managerAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access secret manager',
+      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access_secret_manager',
     managerAccessTokenExpiration:
       parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION) || 3600,
     managerRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh secret manager',
+      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_manager',
     managerRefreshTokenExpiration:
       parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
     adminAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access admin ',
+      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access_secret_admin ',
     adminAccessTokenExpiration:
       parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION) || 3600,
     adminRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh secret admin',
+      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_admin',
     adminRefreshTokenExpiration:
       parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
   },

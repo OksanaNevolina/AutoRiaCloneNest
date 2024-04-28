@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {Injectable, Logger, UnauthorizedException} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';

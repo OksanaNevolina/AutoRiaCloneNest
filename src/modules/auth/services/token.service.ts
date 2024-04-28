@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {Injectable, Logger, UnauthorizedException} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -102,7 +102,7 @@ export class TokenService {
   private async checkTokenManager(
     token: string,
     type: TokenType,
-  ): Promise<JwtPayload> {
+  ): Promise<any> {
     try {
       let secret: string;
 
@@ -114,6 +114,7 @@ export class TokenService {
           secret = this.jwtConfig.managerRefreshTokenSecret;
           break;
       }
+      Logger.log(secret,type)
       return await this.jwtService.verifyAsync(token, { secret });
     } catch (e) {
       throw new UnauthorizedException();
@@ -123,7 +124,7 @@ export class TokenService {
   private async checkTokenSeller(
     token: string,
     type: TokenType,
-  ): Promise<JwtPayload> {
+  ): Promise<any> {
     try {
       let secret: string;
 
@@ -135,7 +136,7 @@ export class TokenService {
           secret = this.jwtConfig.sellerRefreshTokenSecret;
           break;
       }
-      return await this.jwtService.verifyAsync(token, { secret });
+      return await this.jwtService.verifyAsync(token, { secret }) as JwtPayload;
     } catch (e) {
       throw new UnauthorizedException();
     }
