@@ -54,36 +54,6 @@ export class AuthService {
 
     return AuthMapper.toResponseDto(user, tokens);
   }
-  public async signUpManager(
-    dto: SignUpRequestDto,
-  ): Promise<AuthUserResponseDto> {
-    await this.userService.isEmailUniqueOrThrow(dto.email);
-
-    const password = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password }),
-    );
-
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.MANAGER,
-      },
-      RoleEnum.MANAGER,
-    );
-
-    await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
-        user.id,
-        tokens.accessToken,
-        RoleEnum.MANAGER,
-      ),
-    ]);
-
-    return AuthMapper.toResponseDto(user, tokens);
-  }
   public async signUpAdmin(
     dto: SignUpRequestDto,
   ): Promise<AuthUserResponseDto> {

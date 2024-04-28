@@ -27,15 +27,6 @@ export class AuthController {
   }
 
   @SkipAuth()
-  @ApiOperation({ summary: 'Registration manager' })
-  @Post('sign-up-manager')
-  public async signUpManager(
-    @Body() dto: SignUpRequestDto,
-  ): Promise<AuthUserResponseDto> {
-    return await this.authService.signUpManager(dto);
-  }
-
-  @SkipAuth()
   @ApiOperation({ summary: 'Registration admin' })
   @Post('sign-up-admin')
   public async signUpAdmin(
