@@ -1,6 +1,6 @@
 import { UserService } from './services/user.service';
 import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
-import {Body, Controller, Get, Put} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Put} from '@nestjs/common';
 import {CurrentUser} from "../auth/decorators/current-user.decorator";
 import {IUserData} from "../auth/interfaces/user-data.interface";
 import {UserResponseDto} from "./dto/response/user.response.dto";
@@ -25,5 +25,12 @@ export class UserController {
       @Body() dto: UpdateUserRequestDto,
   ): Promise<UserResponseDto> {
     return await this.userService.updateMe(userData, dto);
+  }
+  @ApiBearerAuth()
+  @Delete('me')
+  public async deleteMe(
+      @CurrentUser() userData: IUserData,
+  ): Promise<void> {
+    await this.userService.deleteMe(userData);
   }
 }
