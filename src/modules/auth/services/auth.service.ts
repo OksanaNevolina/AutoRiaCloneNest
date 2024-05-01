@@ -1,18 +1,19 @@
-import {Injectable, Logger, UnauthorizedException} from '@nestjs/common';
+import {Injectable, UnauthorizedException} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';
-import { UserRepository } from '../../repository/services/user.repository';
-import { UserService } from '../../user/services/user.service';
-import { SignInRequestDto } from '../dto/request/sign-in.request.dto';
-import { SignUpRequestDto } from '../dto/request/sign-up.request.dto';
-import { AuthUserResponseDto } from '../dto/response/auth-user.response.dto';
-import { TokenResponseDto } from '../dto/response/token.response.dto';
-import { IUserData } from '../interfaces/user-data.interface';
-import { AuthMapper } from './auth.mapper';
-import { AuthCacheService } from './auth-cache.service';
-import { TokenService } from './token.service';
-import { RoleEnum } from '../../../database/enums/role-enum';
+import {RefreshTokenRepository} from '../../repository/services/refresh-token.repository';
+import {UserRepository} from '../../repository/services/user.repository';
+import {UserService} from '../../user/services/user.service';
+import {SignInRequestDto} from '../dto/request/sign-in.request.dto';
+import {SignUpRequestDto} from '../dto/request/sign-up.request.dto';
+import {AuthUserResponseDto} from '../dto/response/auth-user.response.dto';
+import {TokenResponseDto} from '../dto/response/token.response.dto';
+import {IUserData} from '../interfaces/user-data.interface';
+import {AuthMapper} from './auth.mapper';
+import {AuthCacheService} from './auth-cache.service';
+import {TokenService} from './token.service';
+import {RoleEnum} from '../../../database/enums/role-enum';
+import {CreateManagerRequestDto} from "../../user/dto/request/create-manager.request.dto";
 
 @Injectable()
 export class AuthService {
@@ -21,8 +22,10 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly authCacheService: AuthCacheService,
     private readonly userRepository: UserRepository,
-    private readonly refreshRepository: RefreshTokenRepository,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
+
+
 
   public async signUpSeller(
     dto: SignUpRequestDto,
@@ -32,7 +35,7 @@ export class AuthService {
     const password = await bcrypt.hash(dto.password, 10);
 
     const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password }),
+      this.userRepository.create({ ...dto, password,role:RoleEnum.SELLER }),
     );
 
     const tokens = await this.tokenService.generateAuthTokens(
@@ -44,7 +47,7 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -62,7 +65,7 @@ export class AuthService {
     const password = await bcrypt.hash(dto.password, 10);
 
     const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password }),
+      this.userRepository.create({ ...dto, password, role:RoleEnum.ADMIN }),
     );
 
     const tokens = await this.tokenService.generateAuthTokens(
@@ -74,7 +77,7 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -116,14 +119,14 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: user.id,
       }),
       this.authCacheService.removeToken(user.id),
     ]);
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -165,14 +168,14 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: user.id,
       }),
       this.authCacheService.removeToken(user.id),
     ]);
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -214,14 +217,14 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: user.id,
       }),
       this.authCacheService.removeToken(user.id),
     ]);
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -234,7 +237,7 @@ export class AuthService {
 
   public async logout(userData: IUserData): Promise<void> {
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: userData.userId,
       }),
       this.authCacheService.removeToken(userData.userId),
@@ -249,7 +252,7 @@ export class AuthService {
     });
 
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: user.id,
       }),
       this.authCacheService.removeToken(user.id),
@@ -263,7 +266,7 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -281,7 +284,7 @@ export class AuthService {
     });
 
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: user.id,
       }),
       this.authCacheService.removeToken(user.id),
@@ -295,7 +298,7 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
@@ -313,7 +316,7 @@ export class AuthService {
     });
 
     await Promise.all([
-      this.refreshRepository.delete({
+      this.refreshTokenRepository.delete({
         user_id: user.id,
       }),
       this.authCacheService.removeToken(user.id),
@@ -327,7 +330,7 @@ export class AuthService {
     );
 
     await Promise.all([
-      this.refreshRepository.saveToken(user.id, tokens.refreshToken),
+      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,

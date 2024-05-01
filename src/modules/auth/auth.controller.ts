@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {Body, Controller, Logger, Post, UseGuards} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -11,12 +11,12 @@ import { TokenResponseDto } from './dto/response/token.response.dto';
 import { IUserData } from './interfaces/user-data.interface';
 import { AuthService } from './services/auth.service';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import {CreateManagerRequestDto} from "../user/dto/request/create-manager.request.dto";
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
   constructor(private authService: AuthService) {}
-
   @SkipAuth()
   @ApiOperation({ summary: 'Registration seller' })
   @Post('sign-up-seller')

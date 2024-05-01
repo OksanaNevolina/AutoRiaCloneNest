@@ -26,12 +26,8 @@ export class UserEntity extends BaseEntity {
   })
   accountType: AccountTypeEnum;
 
-  @Column({
-    type: 'enum',
-    enum: RoleEnum,
-    default: RoleEnum.SELLER,
-  })
-  role: RoleEnum;
+  @Column({ nullable: true })
+  role: RoleEnum | null;
 
   @OneToMany(() => RefreshTokenEntity, (entity) => entity.user)
   refreshTokens?: RefreshTokenEntity[];
