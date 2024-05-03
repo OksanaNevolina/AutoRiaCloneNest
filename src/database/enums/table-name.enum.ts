@@ -6,4 +6,5 @@ export enum TableNameEnum {
   PERMISSION = 'permission',
   REFRESH_TOKEN = 'refresh-token',
   USERS = 'users',
+  ACTION_TOKEN = 'action_token'
 }

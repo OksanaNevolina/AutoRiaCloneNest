@@ -43,5 +43,18 @@ export default (): Config => ({
       process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_admin',
     adminRefreshTokenExpiration:
       parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
+    forgotSecret:
+    process.env.FORGOT_TOKEN_SECRET || 'forgot_secret',
+    forgotExpiration:
+    parseInt(process.env.FORGOT_TOKEN_EXPIRATION) || 604800000
   },
+  smtp:{
+    userSmtp:
+    process.env.SMTP_USER || 'onevolina5@gmail.com',
+    passSmtp:
+    process.env.SMTP_PASSWORD || 'eohdbdkkzqkkvebf'
+  },
+  frontURL:{
+    frontURL: process.env.FRONT_URL,
+  }
 });

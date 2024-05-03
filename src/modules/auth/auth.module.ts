@@ -9,6 +9,7 @@ import { AuthService } from './services/auth.service';
 import { AuthCacheService } from './services/auth-cache.service';
 import { TokenService } from './services/token.service';
 import { UserService } from '../user/services/user.service';
+import { EmailService } from './services/email.service';
 
 @Module({
   controllers: [AuthController],
@@ -22,6 +23,7 @@ import { UserService } from '../user/services/user.service';
     AuthCacheService,
     TokenService,
     UserService,
+    EmailService,
   ],
   exports: [AuthCacheService],
 })

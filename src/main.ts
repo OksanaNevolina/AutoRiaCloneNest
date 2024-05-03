@@ -9,7 +9,8 @@ import { AppConfig, Config } from './configs/config.type';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
     .setTitle('AutoRiaCloneNest API')

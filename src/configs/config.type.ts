@@ -3,6 +3,8 @@ export type Config = {
   postgres: PostgresConfig;
   redis: RedisConfig;
   jwt: JWTConfig;
+  smtp:SMTPConfig;
+  frontURL:frontURLConfig
 };
 
 export type AppConfig = {
@@ -16,6 +18,9 @@ export type PostgresConfig = {
   password: string;
   dbName: string;
 };
+export type frontURLConfig = {
+  frontURL:string
+}
 
 export type RedisConfig = {
   port: number;
@@ -35,4 +40,10 @@ export type JWTConfig = {
   adminAccessTokenExpiration: number;
   adminRefreshTokenSecret: string;
   adminRefreshTokenExpiration: number;
+  forgotSecret:string;
+  forgotExpiration:number
 };
+export type SMTPConfig={
+  userSmtp : string,
+  passSmtp:string
+}

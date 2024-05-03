@@ -7,6 +7,7 @@ import { TokenResponseDto } from '../dto/response/token.response.dto';
 import { TokenType } from '../enums/token-type.enum';
 import { JwtPayload } from '../types/jwt-payload.type';
 import { RoleEnum } from '../../../database/enums/role-enum';
+import {ActionTokenTypeEnum} from "../enums/action-token-type.enum";
 
 @Injectable()
 export class TokenService {
@@ -141,4 +142,39 @@ export class TokenService {
       throw new UnauthorizedException();
     }
   }
+  public async  createActionToken(
+      payload: JwtPayload,
+      tokenType: ActionTokenTypeEnum,
+  ):Promise<string> {
+    let secret: string;
+
+    switch (tokenType) {
+      case ActionTokenTypeEnum.FORGOT:
+        secret = this.jwtConfig.forgotSecret;
+        break;
+      default:
+        throw new UnauthorizedException();
+    }
+    return await this.jwtService.signAsync(payload, {
+     secret: secret,
+     expiresIn: this.jwtConfig.forgotExpiration,
+   });
+  }
+  public async checkActionToken(actionToken: string, type: ActionTokenTypeEnum) :Promise<JwtPayload>{
+    try {
+      let secret: string;
+
+      switch (type) {
+        case ActionTokenTypeEnum.FORGOT:
+          secret = this.jwtConfig.forgotSecret;
+          break;
+      }
+
+      return await this.jwtService.verifyAsync(actionToken, { secret });
+
+    } catch (e) {
+      throw new UnauthorizedException();
+    }
+  }
+
 }

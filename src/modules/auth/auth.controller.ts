@@ -1,4 +1,4 @@
-import {Body, Controller, Logger, Post, UseGuards} from '@nestjs/common';
+import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -11,7 +11,8 @@ import { TokenResponseDto } from './dto/response/token.response.dto';
 import { IUserData } from './interfaces/user-data.interface';
 import { AuthService } from './services/auth.service';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import {CreateManagerRequestDto} from "../user/dto/request/create-manager.request.dto";
+import { ForgotPasswordRequestDto } from './dto/request/forgot-password.request.dto';
+import { SetForgotPasswordRequestDto } from './dto/request/set-forgot-password.request.dto';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -100,5 +101,23 @@ export class AuthController {
     @CurrentUser() userData: IUserData,
   ): Promise<TokenResponseDto> {
     return await this.authService.updateRefreshTokenAdmin(userData);
+  }
+  @SkipAuth()
+  @ApiOperation({ summary: 'Forgot password' })
+  @Post('forgot-password')
+  public async forgotPassword(
+    @Body() dto: ForgotPasswordRequestDto,
+  ): Promise<void> {
+    return await this.authService.forgotPassword(dto);
+  }
+
+  @SkipAuth()
+  @ApiOperation({ summary: 'Set forgot password' })
+  @Post('/forgot-password/:token')
+  public async setForgotPassword(
+    @Body() dto: SetForgotPasswordRequestDto,
+    @Param('token') token: string,
+  ): Promise<void> {
+    return await this.authService.setForgotPassword(dto, token);
   }
 }

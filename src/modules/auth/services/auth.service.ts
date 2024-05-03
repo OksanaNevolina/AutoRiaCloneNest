@@ -1,19 +1,30 @@
-import {Injectable, UnauthorizedException} from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-import {RefreshTokenRepository} from '../../repository/services/refresh-token.repository';
-import {UserRepository} from '../../repository/services/user.repository';
-import {UserService} from '../../user/services/user.service';
-import {SignInRequestDto} from '../dto/request/sign-in.request.dto';
-import {SignUpRequestDto} from '../dto/request/sign-up.request.dto';
-import {AuthUserResponseDto} from '../dto/response/auth-user.response.dto';
-import {TokenResponseDto} from '../dto/response/token.response.dto';
-import {IUserData} from '../interfaces/user-data.interface';
-import {AuthMapper} from './auth.mapper';
-import {AuthCacheService} from './auth-cache.service';
-import {TokenService} from './token.service';
-import {RoleEnum} from '../../../database/enums/role-enum';
-import {CreateManagerRequestDto} from "../../user/dto/request/create-manager.request.dto";
+import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';
+import { UserRepository } from '../../repository/services/user.repository';
+import { UserService } from '../../user/services/user.service';
+import { SignInRequestDto } from '../dto/request/sign-in.request.dto';
+import { SignUpRequestDto } from '../dto/request/sign-up.request.dto';
+import { AuthUserResponseDto } from '../dto/response/auth-user.response.dto';
+import { TokenResponseDto } from '../dto/response/token.response.dto';
+import { IUserData } from '../interfaces/user-data.interface';
+import { AuthMapper } from './auth.mapper';
+import { AuthCacheService } from './auth-cache.service';
+import { TokenService } from './token.service';
+import { RoleEnum } from '../../../database/enums/role-enum';
+import { ForgotPasswordRequestDto } from '../dto/request/forgot-password.request.dto';
+import { ActionTokenTypeEnum } from '../enums/action-token-type.enum';
+import { ActionTokenRepository } from '../../repository/services/action-token.repository';
+import { EmailActionEnum } from '../enums/email-action.enum';
+import { EmailService } from './email.service';
+import { UserEntity } from '../../../database/entities/user.entity';
+import { SetForgotPasswordRequestDto } from '../dto/request/set-forgot-password.request.dto';
+import { JwtPayload } from '../types/jwt-payload.type';
 
 @Injectable()
 export class AuthService {
@@ -23,9 +34,9 @@ export class AuthService {
     private readonly authCacheService: AuthCacheService,
     private readonly userRepository: UserRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly actionTokenRepository: ActionTokenRepository,
+    private readonly emailService: EmailService,
   ) {}
-
-
 
   public async signUpSeller(
     dto: SignUpRequestDto,
@@ -35,7 +46,7 @@ export class AuthService {
     const password = await bcrypt.hash(dto.password, 10);
 
     const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password,role:RoleEnum.SELLER }),
+      this.userRepository.create({ ...dto, password, role: RoleEnum.SELLER }),
     );
 
     const tokens = await this.tokenService.generateAuthTokens(
@@ -57,6 +68,7 @@ export class AuthService {
 
     return AuthMapper.toResponseDto(user, tokens);
   }
+
   public async signUpAdmin(
     dto: SignUpRequestDto,
   ): Promise<AuthUserResponseDto> {
@@ -65,7 +77,7 @@ export class AuthService {
     const password = await bcrypt.hash(dto.password, 10);
 
     const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password, role:RoleEnum.ADMIN }),
+      this.userRepository.create({ ...dto, password, role: RoleEnum.ADMIN }),
     );
 
     const tokens = await this.tokenService.generateAuthTokens(
@@ -338,5 +350,50 @@ export class AuthService {
       ),
     ]);
     return tokens;
+  }
+
+  public async forgotPassword(dto: ForgotPasswordRequestDto) {
+    const user: UserEntity = await this.userRepository.findOneBy({
+      email: dto.email,
+    });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    const actionToken = await this.tokenService.createActionToken(
+      { userId: user.id, role: RoleEnum.SELLER },
+      ActionTokenTypeEnum.FORGOT,
+    );
+
+    await this.actionTokenRepository.saveActionToken(user.id, actionToken);
+    await this.emailService.sendMail(
+      user.email,
+      EmailActionEnum.FORGOT_PASSWORD,
+      {
+        actionToken,
+      },
+    );
+  }
+
+  public async setForgotPassword(
+    dto: SetForgotPasswordRequestDto,
+    actionToken: string,
+  ) {
+    const payload = await this.tokenService.checkActionToken(
+      actionToken,
+      ActionTokenTypeEnum.FORGOT,
+    );
+    const entity = await this.actionTokenRepository.findOneBy({
+      actionToken,
+    });
+    if (!entity) {
+      throw new BadRequestException();
+    }
+    const newHashedPassword = await bcrypt.hash(dto.password, 10);
+
+    await this.userRepository.update(payload.userId, {
+      password: newHashedPassword,
+    });
+
+    await this.actionTokenRepository.delete({ actionToken });
   }
 }
