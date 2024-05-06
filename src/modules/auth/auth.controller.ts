@@ -13,6 +13,7 @@ import { AuthService } from './services/auth.service';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { ForgotPasswordRequestDto } from './dto/request/forgot-password.request.dto';
 import { SetForgotPasswordRequestDto } from './dto/request/set-forgot-password.request.dto';
+import { ChangePasswordRequestDto } from './dto/request/change-password.request.dto';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -102,12 +103,22 @@ export class AuthController {
   ): Promise<TokenResponseDto> {
     return await this.authService.updateRefreshTokenAdmin(userData);
   }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password' })
+  @Post('change-password')
+  public async changePassword(
+    @CurrentUser() userData: IUserData,
+    @Body() dto: ChangePasswordRequestDto,
+  ): Promise<string> {
+    return await this.authService.changePassword(dto,userData);
+  }
   @SkipAuth()
   @ApiOperation({ summary: 'Forgot password' })
   @Post('forgot-password')
   public async forgotPassword(
     @Body() dto: ForgotPasswordRequestDto,
-  ): Promise<void> {
+  ): Promise<string> {
     return await this.authService.forgotPassword(dto);
   }
 
@@ -117,7 +128,7 @@ export class AuthController {
   public async setForgotPassword(
     @Body() dto: SetForgotPasswordRequestDto,
     @Param('token') token: string,
-  ): Promise<void> {
+  ): Promise<string> {
     return await this.authService.setForgotPassword(dto, token);
   }
 }

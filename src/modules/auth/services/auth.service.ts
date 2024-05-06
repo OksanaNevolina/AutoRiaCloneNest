@@ -1,6 +1,6 @@
 import {
   BadRequestException,
-  Injectable,
+  Injectable, Logger, NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -24,7 +24,7 @@ import { EmailActionEnum } from '../enums/email-action.enum';
 import { EmailService } from './email.service';
 import { UserEntity } from '../../../database/entities/user.entity';
 import { SetForgotPasswordRequestDto } from '../dto/request/set-forgot-password.request.dto';
-import { JwtPayload } from '../types/jwt-payload.type';
+import {ChangePasswordRequestDto} from "../dto/request/change-password.request.dto";
 
 @Injectable()
 export class AuthService {
@@ -352,7 +352,7 @@ export class AuthService {
     return tokens;
   }
 
-  public async forgotPassword(dto: ForgotPasswordRequestDto) {
+  public async forgotPassword(dto: ForgotPasswordRequestDto):Promise<string> {
     const user: UserEntity = await this.userRepository.findOneBy({
       email: dto.email,
     });
@@ -372,6 +372,7 @@ export class AuthService {
         actionToken,
       },
     );
+    return "метод forgotPassword успфшко відпрацював, користувачеві на пошту буув відправлений лист"
   }
 
   public async setForgotPassword(
@@ -395,5 +396,32 @@ export class AuthService {
     });
 
     await this.actionTokenRepository.delete({ actionToken });
+    return "setForgotPassword метод успішно відправцював"
   }
+  public async changePassword(dto: ChangePasswordRequestDto, userData: IUserData):Promise<string> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userData.userId
+      },
+      select: ["id", "password"]
+    });
+    if (!user) {
+      throw new NotFoundException();
+    }
+    const isPasswordsMatch = await bcrypt.compare(
+        dto.oldPassword,
+        user.password,
+    );
+
+    if (!isPasswordsMatch) {
+      throw new BadRequestException('Incorrect password');
+    }
+    const newPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.userRepository.update(user.id, {
+      password: newPassword,
+    });
+    return "пароль успішно змінений, метод успішно відпрацював changePassword"
+  }
+
 }
