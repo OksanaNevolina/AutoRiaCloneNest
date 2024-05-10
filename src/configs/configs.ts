@@ -3,8 +3,8 @@ import * as process from 'node:process';
 
 export default (): Config => ({
   app: {
-    port: parseInt(process.env.APP_PORT) || 3000,
-    host: process.env.APP_HOST || '0.0.0.0',
+    port: parseInt(process.env.APP_PORT),
+    host: process.env.APP_HOST,
   },
   postgres: {
     host: process.env.POSTGRES_HOST,
@@ -15,38 +15,38 @@ export default (): Config => ({
   },
   redis: {
     host: process.env.REDIS_HOST,
-    port: parseInt(process.env.REDIS_PORT) || 6379,
+    port: parseInt(process.env.REDIS_PORT),
     password: process.env.REDIS_PASSWORD,
   },
   jwt: {
     sellerAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access_secret_seller',
+      process.env.AUTH_ACCESS_TOKEN_SECRET,
     sellerAccessTokenExpiration:
-      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION) || 3600,
+      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION),
     sellerRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_seller',
+      process.env.AUTH_REFRESH_TOKEN_SECRET,
     sellerRefreshTokenExpiration:
-      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
+      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION),
     managerAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access_secret_manager',
+      process.env.AUTH_ACCESS_TOKEN_SECRET,
     managerAccessTokenExpiration:
-      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION) || 3600,
+      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION),
     managerRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_manager',
+      process.env.AUTH_REFRESH_TOKEN_SECRET,
     managerRefreshTokenExpiration:
-      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
+      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION),
     adminAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET || 'access_secret_admin ',
+      process.env.AUTH_ACCESS_TOKEN_SECRET,
     adminAccessTokenExpiration:
-      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION) || 3600,
+      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION),
     adminRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET || 'refresh_secret_admin',
+      process.env.AUTH_REFRESH_TOKEN_SECRET,
     adminRefreshTokenExpiration:
-      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION) || 86400,
+      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION),
     forgotSecret:
-    process.env.FORGOT_TOKEN_SECRET || 'forgot_secret',
+    process.env.FORGOT_TOKEN_SECRET,
     forgotExpiration:
-    parseInt(process.env.FORGOT_TOKEN_EXPIRATION) || 604800000
+    parseInt(process.env.FORGOT_TOKEN_EXPIRATION)
   },
   smtp:{
     userSmtp:
