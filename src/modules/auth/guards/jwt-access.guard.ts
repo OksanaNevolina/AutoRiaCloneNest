@@ -61,6 +61,8 @@ export class JwtAccessGuard implements CanActivate {
     request.user = {
       userId: user.id,
       email: user.email,
+      role:user.role,
+      accountType:user.accountType
     };
     return true;
   }

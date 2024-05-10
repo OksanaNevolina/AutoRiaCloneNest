@@ -48,11 +48,8 @@ export class JwtRefreshGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException();
     }
-    // request.user = { user };
-    request.user = {
-      userId: user.id,
-      email: user.email,
-    };
+    request.user = { user };
+
     return true;
   }
 }

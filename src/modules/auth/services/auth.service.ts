@@ -1,6 +1,6 @@
 import {
   BadRequestException,
-  Injectable, Logger, NotFoundException,
+  Injectable, NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -372,7 +372,7 @@ export class AuthService {
         actionToken,
       },
     );
-    return "метод forgotPassword успфшко відпрацював, користувачеві на пошту буув відправлений лист"
+    return "successful forgotPassword"
   }
 
   public async setForgotPassword(
@@ -396,7 +396,7 @@ export class AuthService {
     });
 
     await this.actionTokenRepository.delete({ actionToken });
-    return "setForgotPassword метод успішно відправцював"
+    return "successful setForgotPassword "
   }
   public async changePassword(dto: ChangePasswordRequestDto, userData: IUserData):Promise<string> {
     const user = await this.userRepository.findOne({
@@ -421,7 +421,7 @@ export class AuthService {
     await this.userRepository.update(user.id, {
       password: newPassword,
     });
-    return "пароль успішно змінений, метод успішно відпрацював changePassword"
+    return "successful changePassword"
   }
 
 }

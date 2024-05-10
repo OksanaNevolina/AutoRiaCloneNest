@@ -5,8 +5,8 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
+} from "@nestjs/common";
+import { Request, Response } from "express";
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -17,6 +17,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     let status: HttpStatus;
     let messages: string | string[];
+
     if (exception instanceof HttpException) {
       status = (exception as HttpException).getStatus();
       messages = (exception as any).response?.message ?? exception.message;
@@ -27,12 +28,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     messages = Array.isArray(messages) ? messages : [messages];
 
+    // Log the error
     Logger.error(
-      messages,
-      (exception as any).stack,
-      `${request.method} ${request.url}`,
+        messages,
+        (exception as any).stack,
+        `${request.method} ${request.url}`,
     );
 
+    // Send response to the client
     response.status(status).json({
       statusCode: status,
       messages,
@@ -41,3 +44,4 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     });
   }
 }
+

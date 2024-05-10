@@ -3,7 +3,7 @@ import { Transform, Type } from 'class-transformer';
 import { IsOptional, IsString, Length, Matches } from 'class-validator';
 import { TransformHelper } from '../../../../common/helpers/transform.helper';
 
-export class BaseUserRequestDto {
+export class BaseRequestDto {
   @IsOptional()
   @IsString()
   @Length(3, 50)

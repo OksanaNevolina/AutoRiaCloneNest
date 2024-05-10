@@ -1,3 +1,5 @@
 export enum EmailActionEnum {
-    FORGOT_PASSWORD
+    FORGOT_PASSWORD="FORGOT_PASSWORD",
+    REPORT = 'REPORT',
+    VOCABULARY= "VOCABULARY"
 }

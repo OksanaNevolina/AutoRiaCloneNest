@@ -1,6 +1,7 @@
 import {
   ConflictException,
-  Injectable, Logger,
+  Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { IUserData } from '../../auth/interfaces/user-data.interface';
@@ -12,32 +13,12 @@ import { UpdateUserRequestDto } from '../dto/request/update-user.request.dto';
 import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';
 import { UserEntity } from '../../../database/entities/user.entity';
 
-import * as bcrypt from 'bcrypt';
-import { RoleEnum } from '../../../database/enums/role-enum';
-
-import {CreateManagerRequestDto} from "../dto/request/create-manager.request.dto";
-
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
-
-  public async createManager(
-    userData: IUserData,
-    dto: CreateManagerRequestDto,
-  ): Promise<UserResponseDto>{
-    const admin = await this.userRepository.findOneBy({ id: userData.userId });
-    if (!admin || admin.role !== RoleEnum.ADMIN) {
-      throw new Error("Only administrators can create managers");
-    }
-    const password = await bcrypt.hash(dto.password, 10);
-    const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password }),
-    );
-    return UserMapper.toResponseDto(user);
-  }
 
   public async findMe(userData: IUserData): Promise<UserResponseDto> {
     try {
@@ -66,8 +47,22 @@ export class UserService {
   public async deleteMe(userData: IUserData): Promise<void> {
     try {
       const user = await this.findByIdOrThrow(userData.userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const refreshTokens = await this.refreshTokenRepository.find({
+        where: { user: { id: userData.userId } },
+      });
+
       await this.refreshTokenRepository.delete({ user: user });
-      await this.userRepository.delete({ id: userData.userId });
+      await Promise.all(
+        refreshTokens.map(async (token) => {
+          await this.refreshTokenRepository.remove(token);
+        }),
+      );
+
+      await this.userRepository.remove(user);
     } catch (error) {
       throw new UnprocessableEntityException('Failed to delete user data');
     }

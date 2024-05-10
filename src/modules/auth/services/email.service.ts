@@ -48,7 +48,7 @@ export class EmailService {
 
   public async sendMail(
     email: string | string[],
-    emailAction: EmailActionEnum.FORGOT_PASSWORD,
+    emailAction: EmailActionEnum,
     context: Record<string, string | number> = {},
   ) {
     const { subject, templateName } = emailTemplates[emailAction];

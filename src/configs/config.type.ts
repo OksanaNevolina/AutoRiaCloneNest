@@ -1,10 +1,13 @@
+import process from "node:process";
+
 export type Config = {
   app: AppConfig;
   postgres: PostgresConfig;
   redis: RedisConfig;
   jwt: JWTConfig;
   smtp:SMTPConfig;
-  frontURL:frontURLConfig
+  frontURL:frontURLConfig;
+  AWSs3:AWSs3Config
 };
 
 export type AppConfig = {
@@ -46,4 +49,12 @@ export type JWTConfig = {
 export type SMTPConfig={
   userSmtp : string,
   passSmtp:string
+}
+export  type AWSs3Config={
+
+    awsS3AccessKey:string
+    awsS3SecretKey:string
+    awsS3BucketName:string
+    awsS3Region:string
+    awsS3URL:string
 }

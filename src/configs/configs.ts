@@ -56,5 +56,17 @@ export default (): Config => ({
   },
   frontURL:{
     frontURL: process.env.FRONT_URL,
+  },
+  AWSs3:{
+    awsS3AccessKey:
+        process.env.AWS_S3_ACCESS_KEY || "AKIAWLWQMW4RZU3U47GB",
+    awsS3SecretKey:
+        process.env.AWS_S3_SECRET_KEY || "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",
+    awsS3BucketName:
+    process.env.AWS_S3_BUCKET_NAME || "bucket-f-avka",
+    awsS3Region:
+        process.env.AWS_S3_REGION || "us-east-1",
+    awsS3URL:
+        process.env.AWS_S3_URL || "https://bucket-f-avka.s3.amazonaws.com/"
   }
 });

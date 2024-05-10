@@ -4,6 +4,8 @@ import { BaseEntity } from './models/base.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { AccountTypeEnum } from '../enums/account-type.enum';
 import { RoleEnum } from '../enums/role-enum';
+import {PermissionEntity} from "./permission.entity";
+import {CarEntity} from "./car.entity";
 
 @Entity(TableNameEnum.USERS)
 export class UserEntity extends BaseEntity {
@@ -17,7 +19,7 @@ export class UserEntity extends BaseEntity {
   password: string;
 
   @Column('boolean', { default: true })
-  status: boolean;
+  isBanned: boolean;
 
   @Column({
     type: 'enum',
@@ -31,4 +33,9 @@ export class UserEntity extends BaseEntity {
 
   @OneToMany(() => RefreshTokenEntity, (entity) => entity.user)
   refreshTokens?: RefreshTokenEntity[];
+
+  @OneToMany(() => PermissionEntity, (entity) => entity.user)
+  permissions?: PermissionEntity[];
+  @OneToMany(() => CarEntity, (car) => car.createdBy)
+  cars: CarEntity[];
 }

@@ -3,6 +3,7 @@ import { TableNameEnum } from '../enums/table-name.enum';
 import { BaseEntity } from './models/base.entity';
 import { BrandEntity } from './brand.entity';
 import { ModelEntity } from './model.entity';
+import {UserEntity} from "./user.entity";
 
 @Entity(TableNameEnum.CAR)
 export class CarEntity extends BaseEntity {
@@ -11,6 +12,15 @@ export class CarEntity extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
+
+  @Column({ length: 3 })
+  currency: string;
+
+  @Column({ type: "decimal", precision: 10, scale: 4, nullable: true })
+  currencyExchangeRate: number;
+
+  @Column("simple-array", { nullable: true })
+  imageUrls: string[];
 
   @Column({ type: 'text' })
   description: string;
@@ -25,5 +35,10 @@ export class CarEntity extends BaseEntity {
   brand: BrandEntity;
 
   @ManyToOne(() => ModelEntity, (model) => model.cars)
-  model: BrandEntity;
+  model: ModelEntity;
+
+  @ManyToOne(() => UserEntity, (user) => user.cars)
+  createdBy: UserEntity;
+  @Column()
+  isActive: boolean;
 }
