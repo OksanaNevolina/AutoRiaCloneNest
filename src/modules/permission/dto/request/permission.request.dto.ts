@@ -13,5 +13,13 @@ export class PermissionRequestDto {
     @Transform(TransformHelper.trim)
     @Type(() => String)
     name?: string;
+    @ApiProperty()
+    @IsOptional()
+    @IsOptional()
+    @IsString()
+    @Length(3, 500)
+    @Transform(TransformHelper.trim)
+    @Type(() => String)
+    description?: string;
 
 }

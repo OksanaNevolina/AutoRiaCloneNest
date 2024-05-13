@@ -1,9 +1,11 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { TableNameEnum } from '../enums/table-name.enum';
 import { BaseEntity } from './models/base.entity';
 import { BrandEntity } from './brand.entity';
 import { ModelEntity } from './model.entity';
-import {UserEntity} from "./user.entity";
+import { UserEntity } from './user.entity';
+import {ViewLogEntity} from "./viewLog.entity";
+
 
 @Entity(TableNameEnum.CAR)
 export class CarEntity extends BaseEntity {
@@ -16,10 +18,10 @@ export class CarEntity extends BaseEntity {
   @Column({ length: 3 })
   currency: string;
 
-  @Column({ type: "decimal", precision: 10, scale: 4, nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
   currencyExchangeRate: number;
 
-  @Column("simple-array", { nullable: true })
+  @Column('simple-array', { nullable: true })
   imageUrls: string[];
 
   @Column({ type: 'text' })
@@ -41,4 +43,9 @@ export class CarEntity extends BaseEntity {
   createdBy: UserEntity;
   @Column()
   isActive: boolean;
+  @Column({ default: 0 })
+  views: number;
+
+  @OneToMany(() => ViewLogEntity, (viewLog) => viewLog.car)
+  viewsLog: ViewLogEntity[];
 }

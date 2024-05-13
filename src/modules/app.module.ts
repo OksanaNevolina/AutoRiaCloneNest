@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { RepositoryModule } from './repository/repository.module';
 import { PostgresModule } from '../postgres/postgres.module';
 import { CarModule } from './car/car.module';
+import { PermissionModule } from './permission/permission.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CarModule } from './car/car.module';
     AuthModule,
     RepositoryModule,
     CarModule,
+    PermissionModule,
   ],
   controllers: [],
   providers: [],

@@ -54,6 +54,12 @@ export class CarRepository extends Repository<CarEntity> {
     };
   }
 
-
+  async findCarsWithBrandAndModelByRegion(region: string): Promise<CarEntity[]> {
+    return this.createQueryBuilder('car')
+        .leftJoinAndSelect('car.brand', 'brand')
+        .leftJoinAndSelect('car.model', 'model')
+        .where('car.region = :region', { region })
+        .getMany();
+  }
 
 }

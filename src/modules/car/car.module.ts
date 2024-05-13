@@ -6,13 +6,14 @@ import {CurrencyService} from "./services/currency.service";
 import {ProfanityService} from "./services/profanity.service";
 import {S3Service} from "./services/s3.service";
 import { ScheduleModule } from '@nestjs/schedule';
+import {UserService} from "../user/services/user.service";
 
 
 
 @Module({
     imports:  [ScheduleModule.forRoot()],
     controllers: [CarController],
-    providers: [CarService,CurrencyService,ProfanityService,S3Service,EmailService],
+    providers: [CarService,CurrencyService,ProfanityService,S3Service,EmailService,UserService],
     exports: [CarService],
 })
 export class CarModule {}

@@ -32,7 +32,6 @@ export class ProfanityGuard implements CanActivate {
         const attemptsCount = await this.carService.getProfanityAttemptsCount(
             dto.modelId,
         );
-        Logger.log(attemptsCount)
         if (attemptsCount >= 3) {
             return true
         }

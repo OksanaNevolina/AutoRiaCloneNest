@@ -2,7 +2,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Body,
-  Controller,
+  Controller, Delete,
   Get,
   NotFoundException,
   Param,
@@ -53,6 +53,15 @@ export class PermissionController {
     }
     return permission;
   }
+  @ApiBearerAuth()
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Delete permission' })
+  @Delete('delete-permission/:idPermission')
+  async deletePermissions(
+      @Param('idPermission') idPermission: string,
+  ): Promise<void> {
+    return await this.permissionService.deletePermissions(idPermission);
+  }
 
   @ApiBearerAuth()
   @UseGuards(AdminGuard)
@@ -62,10 +71,6 @@ export class PermissionController {
     @Param('userId') userId: string,
     @Param('permissionName') permissionName: string,
   ): Promise<void> {
-    try {
-      await this.permissionService.grantPermission(userId, permissionName);
-    } catch (error) {
-      throw new NotFoundException(error.message);
-    }
+    await this.permissionService.grantPermission(userId, permissionName);
   }
 }

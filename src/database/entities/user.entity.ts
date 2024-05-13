@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import {Column, Entity, JoinTable, ManyToMany, OneToMany} from 'typeorm';
 import { TableNameEnum } from '../enums/table-name.enum';
 import { BaseEntity } from './models/base.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
@@ -34,7 +34,8 @@ export class UserEntity extends BaseEntity {
   @OneToMany(() => RefreshTokenEntity, (entity) => entity.user)
   refreshTokens?: RefreshTokenEntity[];
 
-  @OneToMany(() => PermissionEntity, (entity) => entity.user)
+  @ManyToMany(() => PermissionEntity, (entity) => entity.users)
+  @JoinTable()
   permissions?: PermissionEntity[];
   @OneToMany(() => CarEntity, (car) => car.createdBy)
   cars: CarEntity[];

@@ -10,22 +10,20 @@ import { RoleEnum } from '../../../database/enums/role-enum';
 import { CreateManagerRequestDto } from '../dto/request/create-manager.request.dto';
 import * as bcrypt from 'bcrypt';
 import { UserMapper } from './user.mapper';
-import { PermissionRepository } from '../../repository/services/permission.repository';
-import {UserService} from "./user.service";
+import { UserService } from './user.service';
 
 @Injectable()
 export class AdminService {
   constructor(
-      private readonly userRepository: UserRepository,
-      private readonly userService:UserService
-      ) {}
-
+    private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
+  ) {}
 
   public async createManager(
     userData: IUserData,
     dto: CreateManagerRequestDto,
   ): Promise<UserResponseDto> {
-    const admin = await this.userService.findByIdOrThrow(userData.userId)
+    const admin = await this.userService.findByIdOrThrow(userData.userId);
     if (!admin || admin.role !== RoleEnum.ADMIN) {
       throw new UnauthorizedException(
         'Only administrators can create managers',

@@ -19,6 +19,7 @@ import { AdminService } from './services/admin.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { ManagerService } from './services/manager.service';
 import {AccountService} from "./services/account.service";
+import {ManagerGuard} from "../auth/guards/manager.guard";
 
 @ApiTags('User')
 @Controller('user')
@@ -64,8 +65,9 @@ export class UserController {
     return await this.admanService.createManager(userData, dto);
   }
   @ApiOperation({ summary: 'Ban user' })
+  @UseGuards(ManagerGuard)
   @ApiBearerAuth()
-  @Post('ban-user/:userId')
+  @Post('ban/:userId')
   public async banUser(
     @Param('userId') userId: string,
     @CurrentUser() userData: IUserData,
@@ -90,4 +92,5 @@ export class UserController {
   ): Promise<UserResponseDto> {
     return await this.accountService.upgradeToPremium(userId);
   }
+
 }

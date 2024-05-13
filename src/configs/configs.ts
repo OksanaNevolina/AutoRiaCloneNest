@@ -20,29 +20,29 @@ export default (): Config => ({
   },
   jwt: {
     sellerAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET,
+      process.env.SALLER_AUTH_ACCESS_TOKEN_SECRET,
     sellerAccessTokenExpiration:
-      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION),
+      parseInt(process.env.SALLER_AUTH_ACCESS_TOKEN_EXPIRATION),
     sellerRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET,
+      process.env.SALLER_AUTH_REFRESH_TOKEN_SECRET,
     sellerRefreshTokenExpiration:
-      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION),
+      parseInt(process.env.SALLER_AUTH_REFRESH_TOKEN_EXPIRATION),
     managerAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET,
+      process.env.MAMAGER_AUTH_ACCESS_TOKEN_SECRET,
     managerAccessTokenExpiration:
-      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION),
+      parseInt(process.env.MAMAGER_AUTH_ACCESS_TOKEN_EXPIRATION),
     managerRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET,
+      process.env.MAMAGER_AUTH_REFRESH_TOKEN_SECRET,
     managerRefreshTokenExpiration:
-      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION),
+      parseInt(process.env.MAMAGER_AUTH_REFRESH_TOKEN_EXPIRATION),
     adminAccessTokenSecret:
-      process.env.AUTH_ACCESS_TOKEN_SECRET,
+      process.env.ADMIN_AUTH_ACCESS_TOKEN_SECRET,
     adminAccessTokenExpiration:
-      parseInt(process.env.AUTH_ACCESS_TOKEN_EXPIRATION),
+      parseInt(process.env.ADMIN_AUTH_ACCESS_TOKEN_EXPIRATION),
     adminRefreshTokenSecret:
-      process.env.AUTH_REFRESH_TOKEN_SECRET,
+      process.env.ADMIN_AUTH_REFRESH_TOKEN_SECRET,
     adminRefreshTokenExpiration:
-      parseInt(process.env.AUTH_REFRESH_TOKEN_EXPIRATION),
+      parseInt(process.env.ADMIN_AUTH_REFRESH_TOKEN_EXPIRATION),
     forgotSecret:
     process.env.FORGOT_TOKEN_SECRET,
     forgotExpiration:

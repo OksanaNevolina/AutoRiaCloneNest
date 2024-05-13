@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 
 import { PermissionService } from './services/permission.service';
-import { UserController } from '../user/user.controller';
-import { UserService } from '../user/services/user.service';
+import { PermissionController } from './permission.controller';
 
 @Module({
   imports: [],
-  controllers: [UserController],
+  controllers: [PermissionController],
 
-  providers: [UserService, PermissionService],
-  exports: [UserService],
+  providers: [PermissionService],
+  exports: [PermissionService],
 })
-export class UserModule {}
+export class PermissionModule {}

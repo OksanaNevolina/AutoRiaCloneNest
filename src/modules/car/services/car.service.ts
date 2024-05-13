@@ -20,7 +20,10 @@ import { UserRepository } from '../../repository/services/user.repository';
 import { ICar } from '../types/car.type';
 import { EmailActionEnum } from '../../auth/enums/email-action.enum';
 import { EmailService } from '../../auth/services/email.service';
-import {CarBrandResponceDto} from "../dto/response/car.brand.responce.dto";
+import { CarBrandResponceDto } from '../dto/response/car.brand.responce.dto';
+import { UserService } from '../../user/services/user.service';
+import { UserResponseDto } from '../../user/dto/response/user.response.dto';
+import { ViewLogEntity } from '../../../database/entities/viewLog.entity';
 
 @Injectable()
 export class CarService {
@@ -32,6 +35,7 @@ export class CarService {
     private readonly emailService: EmailService,
     private readonly s3Service: S3Service,
     private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
   ) {}
 
   public async getAllPaginated(
@@ -100,15 +104,28 @@ export class CarService {
         EmailActionEnum.REPORT,
         context,
       );
-      Logger.log(`Email sent successfully to ${recipientEmail}`);
     } catch (error) {
-      Logger.error(`Error reporting missing brand/model: ${error.message}`);
       throw new Error(`Failed to report missing brand/model: ${error.message}`);
     }
   }
 
-  async createBrand(dto: CarBrandRequestDto): Promise<BrandEntity> {
+  async createBrand(
+    dto: CarBrandRequestDto,
+    userData: IUserData,
+  ): Promise<BrandEntity> {
     try {
+      const user = await this.userRepository.findOneBy({ id: userData.userId });
+      Logger.log([user.permissions])
+      if (
+        !user ||
+        !user.permissions ||
+        !user.permissions.some(
+          (permission) => permission.name === Constant.CREATE_MODEL_BRAND,
+        )
+      ) {
+        throw new Error('You do not have permission to add create-model-brand');
+      }
+
       return await this.brandRepository.save(
         await this.brandRepository.create(dto),
       );
@@ -117,29 +134,35 @@ export class CarService {
     }
   }
 
+  async deleteBrand(brandId: string): Promise<void> {
+    try {
+      await this.brandRepository.delete({ id: brandId });
+    } catch (error) {
+      throw new Error(`Error creating brand: ${error.message}`);
+    }
+  }
+
   async createModel(
     dto: CarModelRequestDto,
     userData: IUserData,
-    brandId: string
+    brandId: string,
   ): Promise<ModelEntity> {
     try {
       const user = await this.userRepository.findOneBy({ id: userData.userId });
       if (
         !user.permissions.some(
-          (permission) => permission.name === 'add brand and/or model',
+          (permission) => permission.name === Constant.CREATE_MODEL_BRAND,
         )
       ) {
-        throw new Error('You do not have permission to add brand and/or model');
+        throw new Error('You do not have permission to add create-model-brand');
       }
 
-      const { name} = dto;
+      const { name } = dto;
 
       const brand = await this.brandRepository.findOneBy({ id: brandId });
       if (!brand) {
         throw new Error(`Brand with ID ${brandId} not found`);
       }
-
-      // Створити нову модель, пов'язану з поточним брендом
       const newModel = this.modelRepository.create({
         name,
         brand,
@@ -148,6 +171,14 @@ export class CarService {
       return await this.modelRepository.save(newModel);
     } catch (error) {
       throw new Error(`Error creating model: ${error.message}`);
+    }
+  }
+
+  async deleteModel(modelId: string): Promise<void> {
+    try {
+      await this.brandRepository.delete({ id: modelId });
+    } catch (error) {
+      throw new Error(`Error creating brand: ${error.message}`);
     }
   }
 
@@ -186,9 +217,7 @@ export class CarService {
         currencyExchangeRate = currencyRate.buy;
       }
 
-      const attemptsCount = await this.getProfanityAttemptsCount(
-          dto.modelId,
-        );
+      const attemptsCount = await this.getProfanityAttemptsCount(dto.modelId);
       if (attemptsCount >= 3) {
         await this.carRepository.save(
           this.carRepository.create({
@@ -220,6 +249,28 @@ export class CarService {
       );
     } catch (error) {
       throw new Error(`Error creating car listing: ${error.message}`);
+    }
+  }
+  async deactivationCar(
+    userData: IUserData,
+    idCar: string,
+  ): Promise<CarEntity> {
+    try {
+      await this.userService.findByIdOrThrow(userData.userId);
+      const car = await this.userService.findByIdOrThrow(idCar);
+      car.isBanned = false;
+      return await this.carRepository.save(car);
+    } catch (error) {
+      throw new Error(`Error unbanning user: ${error.message}`);
+    }
+  }
+
+  async deleteCar(userData: IUserData, idCar: string): Promise<void> {
+    try {
+      await this.userService.findByIdOrThrow(userData.userId);
+      await this.carRepository.delete({ id: idCar });
+    } catch (error) {
+      throw new Error(`Error creating brand: ${error.message}`);
     }
   }
 
@@ -305,141 +356,148 @@ export class CarService {
     }
   }
 
-  // async increaseViews(carId: string) {
-  //     try {
-  //         const car = await this.carRepository.findOneBy({ id: carId });
-  //         if (car) {
-  //             car.views += 1;
-  //             car.viewsLog.push({ timestamp: new Date() });
-  //             await this.carRepository.save(car);
-  //         } else {
-  //             throw new Error("Car not found");
-  //         }
-  //     } catch (error) {
-  //         throw new Error(`Error increasing views: ${error.message}`);
-  //     }
-  // }
-  //
-  // async getTotalViews(): Promise<number> {
-  //     try {
-  //         const cars = await this.carRepository.findAll();
-  //         return cars.reduce((totalViews, car) => totalViews + car.views, 0);
-  //     } catch (error) {
-  //         throw new Error(`Error getting total views: ${error.message}`);
-  //     }
-  // }
-  //
-  // async getViewsToday(): Promise<number> {
-  //     try {
-  //         const cars = await this.carRepository.findAll();
-  //         const today = new Date();
-  //         let totalViews = 0;
-  //
-  //         for (const car of cars) {
-  //             for (const view of car.viewsLog) {
-  //                 const viewDate = new Date(view.timestamp);
-  //                 if (viewDate.toDateString() === today.toDateString()) {
-  //                     totalViews++;
-  //                 }
-  //             }
-  //         }
-  //
-  //         return totalViews;
-  //     } catch (error) {
-  //         throw new Error(`Error getting views today: ${error.message}`);
-  //     }
-  // }
-  //
-  // async getViewsThisWeek(): Promise<number> {
-  //     try {
-  //         const cars = await this.carRepository.findAll();
-  //         const today = new Date();
-  //         const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  //         let totalViews = 0;
-  //
-  //         for (const car of cars) {
-  //             for (const view of car.viewsLog) {
-  //                 const viewDate = new Date(view.timestamp);
-  //                 if (viewDate >= oneWeekAgo && viewDate <= today) {
-  //                     totalViews++;
-  //                 }
-  //             }
-  //         }
-  //
-  //         return totalViews;
-  //     } catch (error) {
-  //         throw new Error(`Error getting views this week: ${error.message}`);
-  //     }
-  // }
-  //
-  // async getViewsThisMonth(): Promise<number> {
-  //     try {
-  //         const cars = await this.carRepository.findAll();
-  //         const today = new Date();
-  //         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  //         let totalViews = 0;
-  //
-  //         for (const car of cars) {
-  //             for (const view of car.viewsLog) {
-  //                 const viewDate = new Date(view.timestamp);
-  //                 if (viewDate >= firstDayOfMonth && viewDate <= today) {
-  //                     totalViews++;
-  //                 }
-  //             }
-  //         }
-  //
-  //         return totalViews;
-  //     } catch (error) {
-  //         throw new Error(`Error getting views this month: ${error.message}`);
-  //     }
-  // }
-  //
-  // async calculateAveragePriceByRegionBrandModel(
-  //     region: string,
-  //     brand: string,
-  //     model: string,
-  // ): Promise<number> {
-  //     try {
-  //         const carsMatchingCriteria = await this.carRepository.findCarsWithBrandAndModelByRegion(region);
-  //         const filteredCars = carsMatchingCriteria.filter(
-  //             (car) => car.brand?.name === brand && car.model?.name === model,
-  //         );
-  //         if (filteredCars.length === 0) {
-  //             return 0;
-  //         }
-  //         const totalPrices = filteredCars.reduce(
-  //             (total, car) => total + parseFloat(String(car.price)),
-  //             0,
-  //         );
-  //         return totalPrices / filteredCars.length;
-  //     } catch (error) {
-  //         throw new Error(`Error calculating average price: ${error.message}`);
-  //     }
-  // }
-  //
-  // async getAveragePriceByBrandAndModel(
-  //     brand: string,
-  //     model: string,
-  // ): Promise<number> {
-  //     try {
-  //         const cars = await this.carRepository.find({
-  //             where: {
-  //                 brand: { name: brand },
-  //                 model: { name: model },
-  //             },
-  //         });
-  //
-  //         if (cars.length === 0) {
-  //             return 0;
-  //         }
-  //
-  //         const totalPrices = cars.reduce(
-  //             (total, car) => total + parseFloat(String(car.price)),
-  //             0,
-  //         );
-  //         return totalPrices / cars.length;
-  //     } catch (error) {
-  //         throw new Error(`Error getting average price: ${error.message}`);
-  //     }
-  // }
+  async increaseViews(carId: string) {
+    try {
+      const car = await this.carRepository.findOneBy({ id: carId });
+      if (car) {
+        car.views += 1;
+        const viewLog = new ViewLogEntity(); // Створюємо новий екземпляр ViewLogEntity
+        viewLog.timestamp = new Date(); // Встановлюємо поле timestamp
+        car.viewsLog.push(viewLog); // Додаємо об'єкт viewLog до масиву viewsLog
+        await this.carRepository.save(car);
+      } else {
+        throw new Error('Car not found');
+      }
+    } catch (error) {
+      throw new Error(`Error increasing views: ${error.message}`);
+    }
+  }
+
+  async getTotalViews(): Promise<number> {
+    try {
+      const cars = await this.carRepository.find();
+      return cars.reduce((totalViews, car) => totalViews + car.views, 0);
+    } catch (error) {
+      throw new Error(`Error getting total views: ${error.message}`);
+    }
+  }
+
+  async getViewsToday(): Promise<number> {
+    try {
+      const cars = await this.carRepository.find();
+      const today = new Date();
+      let totalViews = 0;
+
+      for (const car of cars) {
+        for (const view of car.viewsLog) {
+          const viewDate = new Date(view.timestamp);
+          if (viewDate.toDateString() === today.toDateString()) {
+            totalViews++;
+          }
+        }
+      }
+
+      return totalViews;
+    } catch (error) {
+      throw new Error(`Error getting views today: ${error.message}`);
+    }
+  }
+
+  async getViewsThisWeek(): Promise<number> {
+    try {
+      const cars = await this.carRepository.find();
+      const today = new Date();
+      const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      let totalViews = 0;
+
+      for (const car of cars) {
+        for (const view of car.viewsLog) {
+          const viewDate = new Date(view.timestamp);
+          if (viewDate >= oneWeekAgo && viewDate <= today) {
+            totalViews++;
+          }
+        }
+      }
+
+      return totalViews;
+    } catch (error) {
+      throw new Error(`Error getting views this week: ${error.message}`);
+    }
+  }
+
+  async getViewsThisMonth(): Promise<number> {
+    try {
+      const cars = await this.carRepository.find();
+      const today = new Date();
+      const firstDayOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1,
+      );
+      let totalViews = 0;
+
+      for (const car of cars) {
+        for (const view of car.viewsLog) {
+          const viewDate = new Date(view.timestamp);
+          if (viewDate >= firstDayOfMonth && viewDate <= today) {
+            totalViews++;
+          }
+        }
+      }
+
+      return totalViews;
+    } catch (error) {
+      throw new Error(`Error getting views this month: ${error.message}`);
+    }
+  }
+
+  async calculateAveragePriceByRegionBrandModel(
+    region: string,
+    brand: string,
+    model: string,
+  ): Promise<number> {
+    try {
+      const carsMatchingCriteria =
+        await this.carRepository.findCarsWithBrandAndModelByRegion(region);
+      const filteredCars = carsMatchingCriteria.filter(
+        (car) => car.brand?.name === brand && car.model?.name === model,
+      );
+      if (filteredCars.length === 0) {
+        return 0;
+      }
+      const totalPrices = filteredCars.reduce(
+        (total, car) => total + parseFloat(String(car.price)),
+        0,
+      );
+      return totalPrices / filteredCars.length;
+    } catch (error) {
+      throw new Error(`Error calculating average price: ${error.message}`);
+    }
+  }
+
+  async getAveragePriceByBrandAndModel(
+    brand: string,
+    model: string,
+  ): Promise<number> {
+    try {
+      const cars = await this.carRepository.find({
+        where: {
+          brand: { name: brand },
+          model: { name: model },
+        },
+      });
+
+      if (cars.length === 0) {
+        return 0;
+      }
+
+      const totalPrices = cars.reduce(
+        (total, car) => total + parseFloat(String(car.price)),
+        0,
+      );
+      return totalPrices / cars.length;
+    } catch (error) {
+      throw new Error(`Error getting average price: ${error.message}`);
+    }
+  }
 }
