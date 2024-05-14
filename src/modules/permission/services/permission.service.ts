@@ -39,24 +39,29 @@ export class PermissionService {
   }
   async grantPermission(userId: string, permissionName: string): Promise<void> {
     try {
-      const user = await this.userRepository.findOneBy({ id: userId });
+      const user = await this.userRepository.createQueryBuilder('user')
+          .leftJoinAndSelect('user.permissions', 'permission')
+          .where('user.id = :userId', { userId })
+          .getOne();
+
       if (!user) {
         throw new NotFoundException('User not found');
       }
-      const permission = await this.permissionRepository.findOneBy({
-        name: permissionName,
-      });
+
+      const permission = await this.permissionRepository.findOne({ where: { name: permissionName } });
       if (!permission) {
         throw new NotFoundException('Permission not found');
       }
-      if (!user.permissions) {
-        // user.permissions = [];
-      }
 
-      user.permissions.push(permission);
-      await this.userRepository.save(user);
+      const existingPermission = user.permissions.find(p => p.name === permissionName);
+      if (!existingPermission) {
+        user.permissions.push(permission);
+        await this.userRepository.save(user);
+      }
     } catch (error) {
       throw new Error(`Error granting permission: ${error.message}`);
     }
   }
+
+
 }

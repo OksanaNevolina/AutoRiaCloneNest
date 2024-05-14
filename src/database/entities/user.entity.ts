@@ -18,7 +18,7 @@ export class UserEntity extends BaseEntity {
   @Column('text', { select: false })
   password: string;
 
-  @Column('boolean', { default: true })
+  @Column('boolean', { default: false })
   isBanned: boolean;
 
   @Column({

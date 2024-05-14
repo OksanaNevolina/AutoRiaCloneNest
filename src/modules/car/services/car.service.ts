@@ -22,8 +22,8 @@ import { EmailActionEnum } from '../../auth/enums/email-action.enum';
 import { EmailService } from '../../auth/services/email.service';
 import { CarBrandResponceDto } from '../dto/response/car.brand.responce.dto';
 import { UserService } from '../../user/services/user.service';
-import { UserResponseDto } from '../../user/dto/response/user.response.dto';
 import { ViewLogEntity } from '../../../database/entities/viewLog.entity';
+import { ConstPermission } from '../../permission/constPermission/constPermission';
 
 @Injectable()
 export class CarService {
@@ -113,22 +113,25 @@ export class CarService {
     dto: CarBrandRequestDto,
     userData: IUserData,
   ): Promise<BrandEntity> {
+    const userId = userData.userId;
     try {
-      const user = await this.userRepository.findOneBy({ id: userData.userId });
-      Logger.log([user.permissions])
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.permissions', 'permission')
+        .where('user.id = :userId', { userId })
+        .getOne();
+
       if (
-        !user ||
         !user.permissions ||
         !user.permissions.some(
-          (permission) => permission.name === Constant.CREATE_MODEL_BRAND,
+          (permission) =>
+            permission.name === ConstPermission.CREATE_MODEL_BRAND,
         )
       ) {
         throw new Error('You do not have permission to add create-model-brand');
       }
 
-      return await this.brandRepository.save(
-        await this.brandRepository.create(dto),
-      );
+      return await this.brandRepository.save(this.brandRepository.create(dto));
     } catch (error) {
       throw new Error(`Error creating brand: ${error.message}`);
     }
@@ -136,7 +139,8 @@ export class CarService {
 
   async deleteBrand(brandId: string): Promise<void> {
     try {
-      await this.brandRepository.delete({ id: brandId });
+      await this.modelRepository.deleteMany(brandId);
+      await this.brandRepository.deleteOne(brandId);
     } catch (error) {
       throw new Error(`Error creating brand: ${error.message}`);
     }
@@ -147,11 +151,19 @@ export class CarService {
     userData: IUserData,
     brandId: string,
   ): Promise<ModelEntity> {
+    const userId = userData.userId;
     try {
-      const user = await this.userRepository.findOneBy({ id: userData.userId });
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.permissions', 'permission')
+        .where('user.id = :userId', { userId })
+        .getOne();
+
       if (
+        !user.permissions ||
         !user.permissions.some(
-          (permission) => permission.name === Constant.CREATE_MODEL_BRAND,
+          (permission) =>
+            permission.name === ConstPermission.CREATE_MODEL_BRAND,
         )
       ) {
         throw new Error('You do not have permission to add create-model-brand');

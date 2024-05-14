@@ -115,7 +115,6 @@ export class TokenService {
           secret = this.jwtConfig.managerRefreshTokenSecret;
           break;
       }
-      Logger.log(secret,type)
       return await this.jwtService.verifyAsync(token, { secret });
     } catch (e) {
       throw new UnauthorizedException();
