@@ -18,6 +18,7 @@ import {ProfanityGuard} from "./guards/ProfanityGuard";
 import {SkipAuth} from "../auth/decorators/skip-auth.decorator";
 import {CarBrandResponceDto} from "./dto/response/car.brand.responce.dto";
 import {PremiumAccountGuard} from "./guards/PremiumAccountGuard";
+import {CurrencyEnum} from "./enums/currency.enum";
 
 @ApiTags('Cars')
 @Controller('cars')
@@ -142,94 +143,76 @@ export class CarController {
     return this.carService.deleteCar(userData,idCar);
   }
 
+    @SkipAuth()
     @ApiOperation({ summary: 'Views car' })
-    @ApiBearerAuth()
-    @Post(':id/views')
-    async increaseViews(@Param('id') carId: string) {
-        try {
-            await this.carService.increaseViews(carId);
-            return { message: 'Views increased successfully' };
-        } catch (error) {
-            return { error: `Error increasing views: ${error.message}` };
-        }
+    @Post(':carId/views')
+    async increaseViews(@Param('carId') carId: string) {
+      await this.carService.increaseViews(carId);
     }
 
   @ApiOperation({ summary: 'Total views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
-  @Get('total-views')
-  async getTotalViews(): Promise<number> {
-    try {
-      return await this.carService.getTotalViews();
-    } catch (error) {
-      throw new Error(`Error getting total views: ${error.message}`);
-    }
+  @Get(':carId/total-views')
+  async getTotalViews(
+      @Param('carId')carId:string
+  ): Promise<number> {
+    return await this.carService.getTotalViews(carId)
   }
 
   @ApiOperation({ summary: 'Today views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
-  @Get('views-today')
-  async getViewsToday(): Promise<number> {
-    try {
-      return await this.carService.getViewsToday();
-    } catch (error) {
-      throw new Error(`Error getting views today: ${error.message}`);
-    }
+  @Get(':carId/views-today')
+  async getViewsToday(
+      @Param('carId')carId:string
+  ): Promise<number> {
+      return await this.carService.getViewsToday(carId);
   }
 
   @ApiOperation({ summary: 'This week views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
-  @Get('views-this-week')
-  async getViewsThisWeek(): Promise<number> {
-    try {
-      return await this.carService.getViewsThisWeek();
-    } catch (error) {
-      throw new Error(`Error getting views this week: ${error.message}`);
-    }
+  @Get(':carId/views-this-week')
+  async getViewsThisWeek(
+      @Param('carId')carId:string
+  ): Promise<number> {
+      return await this.carService.getViewsThisWeek(carId);
   }
 
   @ApiOperation({ summary: 'This month views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
-  @Get('views-this-month')
-  async getViewsThisMonth(): Promise<number> {
-    try {
-      return await this.carService.getViewsThisMonth();
-    } catch (error) {
-      throw new Error(`Error getting views this month: ${error.message}`);
-    }
+  @Get(':carId/views-this-month')
+  async getViewsThisMonth(
+      @Param('carId')carId:string
+  ): Promise<number> {
+      return await this.carService.getViewsThisMonth(carId);
   }
 
-  @ApiOperation({ summary: 'Average price by region, brand and model' })
+  @ApiOperation({ summary: 'Average price by region, brand and model,currency' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
-  @Get('average-price/:region/:brand/:model')
+  @Get('average-price/:region/:brand/:model/:currency')
   async calculateAveragePriceByRegionBrandModel(
       @Param('region') region: string,
       @Param('brand') brand: string,
       @Param('model') model: string,
+      @Param('currency') currency: string,
   ): Promise<number> {
-    try {
-      return await this.carService.calculateAveragePriceByRegionBrandModel(region, brand, model);
-    } catch (error) {
-      throw new Error(`Error calculating average price by region, brand, and model: ${error.message}`);
-    }
+    return await this.carService.calculateAveragePriceByRegionBrandModel(region, brand, model, currency);
   }
 
   @ApiOperation({ summary: 'Average price  by brand and model' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
-  @Get('average-price/:brand/:model')
+  @Get('average-price/:brand/:model/:currency')
   async getAveragePriceByBrandAndModel(
       @Param('brand') brand: string,
       @Param('model') model: string,
+      @Param('currency') currency: string,
   ): Promise<number> {
-    try {
-      return await this.carService.getAveragePriceByBrandAndModel(brand, model);
-    } catch (error) {
-      throw new Error(`Error getting average price by brand and model: ${error.message}`);
-    }
+      return await this.carService.getAveragePriceByBrandAndModel(brand, model,currency);
+
   }
 }

@@ -62,4 +62,11 @@ export class CarRepository extends Repository<CarEntity> {
         .getMany();
   }
 
+  async findCarsWithViewsLog(idCar: string): Promise<CarEntity> {
+    return this.createQueryBuilder('car')
+        .leftJoinAndSelect('car.viewsLog', 'viewsLog')
+        .where('car.id = :idCar', { idCar })
+        .getOne();
+  }
+
 }

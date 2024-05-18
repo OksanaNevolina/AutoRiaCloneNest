@@ -6,7 +6,8 @@ import { CarRepository } from './services/car.repository';
 import { ModelRepository } from './services/model.repository';
 import { PermissionRepository } from './services/permission.repository';
 import { CurrencyRateRepository } from './services/currency-rate.repository';
-import {ActionTokenRepository} from "./services/action-token.repository";
+import { ActionTokenRepository } from './services/action-token.repository';
+import { ViewLogRepository } from './services/view-log.repository';
 
 const repositories = [
   UserRepository,
@@ -16,7 +17,8 @@ const repositories = [
   ModelRepository,
   PermissionRepository,
   CurrencyRateRepository,
-    ActionTokenRepository
+  ActionTokenRepository,
+  ViewLogRepository,
 ];
 
 @Global()

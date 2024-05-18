@@ -3,6 +3,7 @@ import {Injectable, Logger} from "@nestjs/common";
 import { CurrencyRateEntity } from "../../../database/entities/currency-rate.entity";
 import { CurrencyRateRepository } from "../../repository/services/currency-rate.repository";
 import { Cron } from '@nestjs/schedule';
+import {CurrencyEnum} from "../enums/currency.enum";
 
 @Injectable()
 export class CurrencyService {
@@ -42,7 +43,7 @@ export class CurrencyService {
         }
     }
 
-    // async getCurrencyRate(currencyCode: string): Promise<CurrencyRateEntity | undefined> {
-    //   return await this.currencyRateRepository.findOne({ currencyCode });
-    // }
+    async getCurrencyRate(currencyCode: CurrencyEnum): Promise<CurrencyRateEntity | undefined> {
+      return await this.currencyRateRepository.findOneBy({ ccy:currencyCode });
+    }
 }
