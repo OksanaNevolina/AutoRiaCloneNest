@@ -7,13 +7,14 @@ import {ProfanityService} from "./services/profanity.service";
 import {S3Service} from "./services/s3.service";
 import { ScheduleModule } from '@nestjs/schedule';
 import {UserService} from "../user/services/user.service";
+import {FileValidationService} from "./services/file.validation.service";
 
 
 
 @Module({
     imports:  [ScheduleModule.forRoot()],
     controllers: [CarController],
-    providers: [CarService,CurrencyService,ProfanityService,S3Service,EmailService,UserService],
+    providers: [CarService,CurrencyService,ProfanityService,S3Service,EmailService,UserService,FileValidationService],
     exports: [CarService],
 })
 export class CarModule {}

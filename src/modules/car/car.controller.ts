@@ -1,7 +1,17 @@
-import {Body, Controller, Delete, Get, Param, Post, Query, UseGuards} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 
-import {ApiBearerAuth, ApiOperation, ApiTags} from '@nestjs/swagger';
-import { BrandEntity } from '../../database/entities/brand.entity';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ModelEntity } from '../../database/entities/model.entity';
 import { CarReportRequestDto } from './dto/request/car.report.request.dto';
 import { CarCreateRequestDto } from './dto/request/car.create.request.dto';
@@ -13,17 +23,24 @@ import { CarBrandRequestDto } from './dto/request/car.brand.request.dto';
 import { CarService } from './services/car.service';
 import { ICar } from './types/car.type';
 import { IPaginationResponseDto, IQuery } from './types/pagination.type';
-import {CarEntity} from "../../database/entities/car.entity";
-import {ProfanityGuard} from "./guards/ProfanityGuard";
-import {SkipAuth} from "../auth/decorators/skip-auth.decorator";
-import {CarBrandResponceDto} from "./dto/response/car.brand.responce.dto";
-import {PremiumAccountGuard} from "./guards/PremiumAccountGuard";
-import {CurrencyEnum} from "./enums/currency.enum";
+import { CarEntity } from '../../database/entities/car.entity';
+import { ProfanityGuard } from './guards/ProfanityGuard';
+import { SkipAuth } from '../auth/decorators/skip-auth.decorator';
+import { CarBrandResponceDto } from './dto/response/car.brand.responce.dto';
+import { PremiumAccountGuard } from './guards/PremiumAccountGuard';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Cars')
 @Controller('cars')
 export class CarController {
-  constructor(private readonly carService: CarService) {}
+  private readonly carMapper: CarMapper;
+  constructor(
+    private readonly carService: CarService,
+    private readonly configService: ConfigService,
+  ) {
+    this.carMapper = new CarMapper(this.configService);
+  }
 
   @ApiOperation({ summary: 'Get brands' })
   @ApiBearerAuth()
@@ -36,22 +53,18 @@ export class CarController {
   @ApiOperation({ summary: 'Get all cars' })
   @Get('getAll')
   async getAllPaginated(
-      @Query() query: IQuery,
-      @CurrentUser() userData: IUserData,
+    @Query() query: IQuery,
   ): Promise<IPaginationResponseDto<ICar>> {
     const carsPaginated = await this.carService.getAllPaginated(query);
     const mapperCars = carsPaginated.data.map((car) =>
-        CarMapper.toResponseDto(car),
+      this.carMapper.toResponseDto(car),
     );
     return { ...carsPaginated, data: mapperCars };
   }
-
   @SkipAuth()
   @ApiOperation({ summary: 'Get car by id' })
   @Get(':carId')
-  async getCarById(
-      @Param('carId') carId: string
-  ): Promise<CarEntity> {
+  async getCarById(@Param('carId') carId: string): Promise<CarEntity> {
     return this.carService.getById(carId);
   }
 
@@ -76,18 +89,16 @@ export class CarController {
   @ApiBearerAuth()
   @Post('create-brand')
   async createBrand(
-      @Body() dto: CarBrandRequestDto,
-      @CurrentUser()userData:IUserData
+    @Body() dto: CarBrandRequestDto,
+    @CurrentUser() userData: IUserData,
   ): Promise<CarBrandResponceDto> {
-    return await this.carService.createBrand(dto,userData);
+    return await this.carService.createBrand(dto, userData);
   }
 
   @ApiOperation({ summary: 'Delete brand' })
   @ApiBearerAuth()
   @Delete('delete-brand/:brandId')
-  async deleteBrand(
-      @Param('brandId') brandId: string
-  ): Promise<void> {
+  async deleteBrand(@Param('brandId') brandId: string): Promise<void> {
     return await this.carService.deleteBrand(brandId);
   }
 
@@ -97,18 +108,15 @@ export class CarController {
   async createModel(
     @Body() dto: CarModelRequestDto,
     @CurrentUser() userData: IUserData,
-    @Param('brandId') brandId: string
+    @Param('brandId') brandId: string,
   ): Promise<ModelEntity> {
-    return this.carService.createModel(dto, userData,brandId);
+    return this.carService.createModel(dto, userData, brandId);
   }
-
 
   @ApiOperation({ summary: 'Delete model' })
   @ApiBearerAuth()
   @Delete('delete-model/:modelId')
-  async deleteModel(
-      @Param('modelId') modelId: string
-  ): Promise<void> {
+  async deleteModel(@Param('modelId') modelId: string): Promise<void> {
     return await this.carService.deleteModel(modelId);
   }
 
@@ -128,9 +136,9 @@ export class CarController {
   @Post('deactivation-car/:idCar')
   async deactivationCar(
     @CurrentUser() userData: IUserData,
-    @Param('idCar') idCar: string
+    @Param('idCar') idCar: string,
   ): Promise<CarEntity> {
-    return this.carService.deactivationCar(userData,idCar);
+    return this.carService.deactivationCar(userData, idCar);
   }
 
   @ApiOperation({ summary: 'Delete car' })
@@ -138,69 +146,93 @@ export class CarController {
   @Delete('delete-car/:idCar')
   async deleteCar(
     @CurrentUser() userData: IUserData,
-    @Param('idCar')idCar:string
+    @Param('idCar') idCar: string,
   ): Promise<void> {
-    return this.carService.deleteCar(userData,idCar);
+    return this.carService.deleteCar(userData, idCar);
   }
 
-    @SkipAuth()
-    @ApiOperation({ summary: 'Views car' })
-    @Post(':carId/views')
-    async increaseViews(@Param('carId') carId: string) {
-      await this.carService.increaseViews(carId);
+  @ApiOperation({ summary: 'Upload-photos car' })
+  @ApiBearerAuth()
+  @Post('upload-photos/:carId')
+  @UseInterceptors(FilesInterceptor('carPhotos'))
+  async uploadCarPhotos(
+    @UploadedFiles() carPhotos: Express.Multer.File[],
+    @Param('carId') carId: string,
+  ) {
+    try {
+      const uploadedPhotos = await this.carService.uploadCarPhotos(
+        carPhotos,
+        carId,
+      );
+      return {
+        message: 'Photos uploaded successfully',
+        data: uploadedPhotos,
+      };
+    } catch (error) {
+      return {
+        message: 'Error uploading car photos',
+        error: error.message,
+      };
     }
+  }
+
+  @SkipAuth()
+  @ApiOperation({ summary: 'Views car' })
+  @Post(':carId/views')
+  async increaseViews(@Param('carId') carId: string) {
+    await this.carService.increaseViews(carId);
+  }
 
   @ApiOperation({ summary: 'Total views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
   @Get(':carId/total-views')
-  async getTotalViews(
-      @Param('carId')carId:string
-  ): Promise<number> {
-    return await this.carService.getTotalViews(carId)
+  async getTotalViews(@Param('carId') carId: string): Promise<number> {
+    return await this.carService.getTotalViews(carId);
   }
 
   @ApiOperation({ summary: 'Today views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
   @Get(':carId/views-today')
-  async getViewsToday(
-      @Param('carId')carId:string
-  ): Promise<number> {
-      return await this.carService.getViewsToday(carId);
+  async getViewsToday(@Param('carId') carId: string): Promise<number> {
+    return await this.carService.getViewsToday(carId);
   }
 
   @ApiOperation({ summary: 'This week views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
   @Get(':carId/views-this-week')
-  async getViewsThisWeek(
-      @Param('carId')carId:string
-  ): Promise<number> {
-      return await this.carService.getViewsThisWeek(carId);
+  async getViewsThisWeek(@Param('carId') carId: string): Promise<number> {
+    return await this.carService.getViewsThisWeek(carId);
   }
 
   @ApiOperation({ summary: 'This month views car' })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
   @Get(':carId/views-this-month')
-  async getViewsThisMonth(
-      @Param('carId')carId:string
-  ): Promise<number> {
-      return await this.carService.getViewsThisMonth(carId);
+  async getViewsThisMonth(@Param('carId') carId: string): Promise<number> {
+    return await this.carService.getViewsThisMonth(carId);
   }
 
-  @ApiOperation({ summary: 'Average price by region, brand and model,currency' })
+  @ApiOperation({
+    summary: 'Average price by region, brand and model,currency',
+  })
   @ApiBearerAuth()
   @UseGuards(PremiumAccountGuard)
   @Get('average-price/:region/:brand/:model/:currency')
   async calculateAveragePriceByRegionBrandModel(
-      @Param('region') region: string,
-      @Param('brand') brand: string,
-      @Param('model') model: string,
-      @Param('currency') currency: string,
+    @Param('region') region: string,
+    @Param('brand') brand: string,
+    @Param('model') model: string,
+    @Param('currency') currency: string,
   ): Promise<number> {
-    return await this.carService.calculateAveragePriceByRegionBrandModel(region, brand, model, currency);
+    return await this.carService.calculateAveragePriceByRegionBrandModel(
+      region,
+      brand,
+      model,
+      currency,
+    );
   }
 
   @ApiOperation({ summary: 'Average price  by brand and model' })
@@ -208,11 +240,14 @@ export class CarController {
   @UseGuards(PremiumAccountGuard)
   @Get('average-price/:brand/:model/:currency')
   async getAveragePriceByBrandAndModel(
-      @Param('brand') brand: string,
-      @Param('model') model: string,
-      @Param('currency') currency: string,
+    @Param('brand') brand: string,
+    @Param('model') model: string,
+    @Param('currency') currency: string,
   ): Promise<number> {
-      return await this.carService.getAveragePriceByBrandAndModel(brand, model,currency);
-
+    return await this.carService.getAveragePriceByBrandAndModel(
+      brand,
+      model,
+      currency,
+    );
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { DeleteObjectCommand, PutObjectCommand, S3 } from "@aws-sdk/client-s3";
 
-import { UploadedFile } from "express-fileupload";
+
 import { TypeFileUploadEnum } from "../enums/type-file-upload.enum";
 import * as path from "path";
 import { ConfigService } from "@nestjs/config";
@@ -23,17 +23,17 @@ export class S3Service {
     }
 
     async uploadFile(
-        file: UploadedFile,
+        file: Express.Multer.File,
         itemType: TypeFileUploadEnum,
         itemId: string,
     ): Promise<any> {
-        const filePath = this.buildFilePath(itemType, itemId, file.name);
+        const filePath = this.buildFilePath(itemType, itemId, file.originalname);
         const AWSs3Config = this.configService.get<AWSs3Config>("AWSs3");
         await this.client.send(
             new PutObjectCommand({
                 Key: filePath,
                 Bucket: AWSs3Config.awsS3BucketName,
-                Body: file.data,
+                Body: file.buffer,
                 ContentType: file.mimetype,
                 ACL: "public-read",
             }),

@@ -27,6 +27,8 @@ import {ConstPermission} from '../../permission/constPermission/constPermission'
 import {ViewLogRepository} from '../../repository/services/view-log.repository';
 import {CurrencyEnum} from "../enums/currency.enum";
 import {CurrencyService} from "./currency.service";
+import {TypeFileUploadEnum} from "../enums/type-file-upload.enum";
+import {FileValidationService} from "./file.validation.service";
 
 @Injectable()
 export class CarService {
@@ -40,7 +42,7 @@ export class CarService {
     private readonly userRepository: UserRepository,
     private readonly userService: UserService,
     private readonly viewLogRepository: ViewLogRepository,
-    private readonly currencyService:CurrencyService
+    private readonly fileValidationService:FileValidationService,
   ) {}
 
   public async getAllPaginated(
@@ -292,48 +294,48 @@ export class CarService {
     }
   }
 
-  // async uploadCarPhotos(carPhotos: Array<Express.Multer.File>, carId: string) {
-  //     try {
-  //         const uploadedPhotos = [];
-  //
-  //         for (const photo of carPhotos) {
-  //             const filePath = await this.s3Service.uploadFile(
-  //                 photo.buffer,
-  //                 photo.originalname,
-  //                 photo.mimetype,
-  //                 TypeFileUploadEnum.CarPhotos,
-  //                 carId,
-  //             );
-  //             uploadedPhotos.push(filePath);
-  //         }
-  //
-  //         const car = await this.carRepository.findOneBy({ id: carId });
-  //
-  //         if (car) {
-  //             car.imageUrls = uploadedPhotos;
-  //             await this.carRepository.save(car);
-  //         }
-  //
-  //         return uploadedPhotos;
-  //     } catch (error) {
-  //         throw new Error(`Error uploading car photos: ${error.message}`);
-  //     }
-  // }
-  //
-  // async deletePhotoPath(carId: string, photoPath: string): Promise<void> {
-  //     try {
-  //         await this.s3Service.deleteFile(photoPath);
-  //         const car = await this.carRepository.findOneBy({ id: carId });
-  //         if (!car.imageUrls) {
-  //             return;
-  //         }
-  //
-  //         car.imageUrls = car.imageUrls.filter((url) => url !== photoPath);
-  //         await this.carRepository.save(car);
-  //     } catch (error) {
-  //         throw new Error(`Error deleting photo path: ${error.message}`);
-  //     }
-  // }
+  async uploadCarPhotos(carPhotos: Array<Express.Multer.File>, carId: string) {
+      try {
+        await this.fileValidationService.validateFiles(carPhotos)
+
+          const uploadedPhotos = [];
+
+          for (const photo of carPhotos) {
+              const filePath = await this.s3Service.uploadFile(
+                  photo,
+                  TypeFileUploadEnum.CarPhotos,
+                  carId,
+              );
+              uploadedPhotos.push(filePath);
+          }
+
+          const car = await this.carRepository.findOneBy({ id: carId });
+
+          if (car) {
+              car.imageUrls = uploadedPhotos;
+              await this.carRepository.save(car);
+          }
+
+          return uploadedPhotos;
+      } catch (error) {
+          throw new Error(`Error uploading car photos: ${error.message}`);
+      }
+  }
+
+  async deletePhotoPath(carId: string, photoPath: string): Promise<void> {
+      try {
+          await this.s3Service.deleteFile(photoPath);
+          const car = await this.carRepository.findOneBy({ id: carId });
+          if (!car.imageUrls) {
+              return;
+          }
+
+          car.imageUrls = car.imageUrls.filter((url) => url !== photoPath);
+          await this.carRepository.save(car);
+      } catch (error) {
+          throw new Error(`Error deleting photo path: ${error.message}`);
+      }
+  }
 
   private readonly profanityAttempts: Map<string, number> = new Map<
     string,
