@@ -8,6 +8,8 @@ import { PermissionRepository } from './services/permission.repository';
 import { CurrencyRateRepository } from './services/currency-rate.repository';
 import { ActionTokenRepository } from './services/action-token.repository';
 import { ViewLogRepository } from './services/view-log.repository';
+import {DealerRepository} from "./services/dealer.repository";
+
 
 const repositories = [
   UserRepository,
@@ -19,6 +21,7 @@ const repositories = [
   CurrencyRateRepository,
   ActionTokenRepository,
   ViewLogRepository,
+  DealerRepository
 ];
 
 @Global()

@@ -321,21 +321,42 @@ export class CarService {
           throw new Error(`Error uploading car photos: ${error.message}`);
       }
   }
-
   async deletePhotoPath(carId: string, photoPath: string): Promise<void> {
-      try {
-          await this.s3Service.deleteFile(photoPath);
-          const car = await this.carRepository.findOneBy({ id: carId });
-          if (!car.imageUrls) {
-              return;
-          }
+    try {
+      const decodedPhotoPath = decodeURIComponent(photoPath);
+      Logger.log(`Deleting file from S3: ${decodedPhotoPath}`);
 
-          car.imageUrls = car.imageUrls.filter((url) => url !== photoPath);
-          await this.carRepository.save(car);
-      } catch (error) {
-          throw new Error(`Error deleting photo path: ${error.message}`);
+      await this.s3Service.deleteFile(decodedPhotoPath);
+
+      const car = await this.carRepository.findOneBy({ id: carId });
+      if (!car.imageUrls) {
+        return;
       }
+
+      car.imageUrls = car.imageUrls.filter((url) => url !== decodedPhotoPath);
+      await this.carRepository.save(car);
+
+      Logger.log(`Successfully updated car image URLs for carId: ${carId}`);
+    } catch (error) {
+      Logger.error(`Error deleting photo path: ${error.message}`);
+      throw new Error(`Error deleting photo path: ${error.message}`);
+    }
   }
+
+  // async deletePhotoPath(carId: string, photoPath: string): Promise<void> {
+  //     try {
+  //         await this.s3Service.deleteFile(photoPath);
+  //         const car = await this.carRepository.findOneBy({ id: carId });
+  //         if (!car.imageUrls) {
+  //             return;
+  //         }
+  //
+  //         car.imageUrls = car.imageUrls.filter((url) => url !== photoPath);
+  //         await this.carRepository.save(car);
+  //     } catch (error) {
+  //         throw new Error(`Error deleting photo path: ${error.message}`);
+  //     }
+  // }
 
   private readonly profanityAttempts: Map<string, number> = new Map<
     string,

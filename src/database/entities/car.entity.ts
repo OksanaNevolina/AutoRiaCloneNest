@@ -5,6 +5,7 @@ import { BrandEntity } from './brand.entity';
 import { ModelEntity } from './model.entity';
 import { UserEntity } from './user.entity';
 import {ViewLogEntity} from "./viewLog.entity";
+import {DealerEntity} from "./dealer.entity";
 
 
 @Entity(TableNameEnum.CAR)
@@ -48,4 +49,6 @@ export class CarEntity extends BaseEntity {
 
   @OneToMany(() => ViewLogEntity, (viewLog) => viewLog.car)
   viewsLog: ViewLogEntity[];
+  @ManyToOne(() => DealerEntity, (dealer) => dealer.cars)
+  dealer: DealerEntity;
 }

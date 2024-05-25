@@ -2,7 +2,7 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
+  Get, Logger,
   Param,
   Post,
   Query,
@@ -173,6 +173,22 @@ export class CarController {
         message: 'Error uploading car photos',
         error: error.message,
       };
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete car photo' })
+  @Delete('delete-photo/:carId')
+  async deletePhoto(
+      @Param('carId') carId: string,
+      @Query('photoPath') photoPath: string,
+  ): Promise<{ message: string }> {
+    Logger.log(`Deleting photo for carId: ${carId}, photoPath: ${photoPath}`);
+    try {
+      await this.carService.deletePhotoPath(carId, decodeURIComponent(photoPath));
+      return { message: 'Photo deleted successfully' };
+    } catch (error) {
+      return { message: `Error deleting photo: ${error.message}` };
     }
   }
 

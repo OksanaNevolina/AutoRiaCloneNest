@@ -9,6 +9,7 @@ import { RepositoryModule } from './repository/repository.module';
 import { PostgresModule } from '../postgres/postgres.module';
 import { CarModule } from './car/car.module';
 import { PermissionModule } from './permission/permission.module';
+import {DealerModule} from "./dealers/dealer.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PermissionModule } from './permission/permission.module';
     RepositoryModule,
     CarModule,
     PermissionModule,
+    DealerModule
   ],
   controllers: [],
   providers: [],

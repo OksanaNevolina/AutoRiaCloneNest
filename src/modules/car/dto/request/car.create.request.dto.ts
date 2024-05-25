@@ -1,6 +1,5 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  IsArray,
   IsDecimal,
   IsInt,
   IsNotEmpty,
@@ -23,7 +22,8 @@ export class CarCreateRequestDto {
   name?: string;
 
   @ApiProperty()
-  @IsNotEmpty() price: number;
+  @IsNotEmpty()
+  price: number;
 
   @ApiProperty()
   @IsNotEmpty()
