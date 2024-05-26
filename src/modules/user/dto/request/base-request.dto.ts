@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsOptional, IsString, Length, Matches } from 'class-validator';
+import {IsOptional, IsString, Length, Matches} from 'class-validator';
 import { TransformHelper } from '../../../../common/helpers/transform.helper';
 
 export class BaseRequestDto {
@@ -22,4 +22,7 @@ export class BaseRequestDto {
   @Length(0, 300)
   @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%_*#?&])[A-Za-z\d@$_!%*#?&]{8,}$/)
   password: string;
+
+  @IsOptional()
+  dealerId?: string;
 }

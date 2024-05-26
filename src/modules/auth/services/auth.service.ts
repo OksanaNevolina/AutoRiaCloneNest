@@ -1,6 +1,7 @@
 import {
   BadRequestException,
-  Injectable, NotFoundException,
+  Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -24,7 +25,8 @@ import { EmailActionEnum } from '../enums/email-action.enum';
 import { EmailService } from './email.service';
 import { UserEntity } from '../../../database/entities/user.entity';
 import { SetForgotPasswordRequestDto } from '../dto/request/set-forgot-password.request.dto';
-import {ChangePasswordRequestDto} from "../dto/request/change-password.request.dto";
+import { ChangePasswordRequestDto } from '../dto/request/change-password.request.dto';
+import { DealerRepository } from '../../repository/services/dealer.repository';
 
 @Injectable()
 export class AuthService {
@@ -36,6 +38,7 @@ export class AuthService {
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly actionTokenRepository: ActionTokenRepository,
     private readonly emailService: EmailService,
+    private readonly dealerRepository: DealerRepository,
   ) {}
 
   public async signUpSeller(
@@ -45,8 +48,16 @@ export class AuthService {
 
     const password = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password, role: RoleEnum.SELLER }),
+    const user = this.userRepository.create({
+      ...dto,
+      password,
+      role: RoleEnum.SELLER,
+    });
+    if (dto.dealerId) {
+      user.dealer = await this.dealerRepository.findOneBy({ id: dto.dealerId });
+    }
+    await this.userRepository.save(
+      user,
     );
 
     const tokens = await this.tokenService.generateAuthTokens(
@@ -75,11 +86,17 @@ export class AuthService {
     await this.userService.isEmailUniqueOrThrow(dto.email);
 
     const password = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password, role: RoleEnum.ADMIN }),
+    const user = this.userRepository.create({
+      ...dto,
+      password,
+      role: RoleEnum.ADMIN,
+    });
+    if (dto.dealerId) {
+      user.dealer = await this.dealerRepository.findOneBy({ id: dto.dealerId });
+    }
+    await this.userRepository.save(
+        user,
     );
-
     const tokens = await this.tokenService.generateAuthTokens(
       {
         userId: user.id,
@@ -352,7 +369,7 @@ export class AuthService {
     return tokens;
   }
 
-  public async forgotPassword(dto: ForgotPasswordRequestDto):Promise<string> {
+  public async forgotPassword(dto: ForgotPasswordRequestDto): Promise<string> {
     const user: UserEntity = await this.userRepository.findOneBy({
       email: dto.email,
     });
@@ -372,7 +389,7 @@ export class AuthService {
         actionToken,
       },
     );
-    return "successful forgotPassword"
+    return 'successful forgotPassword';
   }
 
   public async setForgotPassword(
@@ -396,21 +413,24 @@ export class AuthService {
     });
 
     await this.actionTokenRepository.delete({ actionToken });
-    return "successful setForgotPassword "
+    return 'successful setForgotPassword ';
   }
-  public async changePassword(dto: ChangePasswordRequestDto, userData: IUserData):Promise<string> {
+  public async changePassword(
+    dto: ChangePasswordRequestDto,
+    userData: IUserData,
+  ): Promise<string> {
     const user = await this.userRepository.findOne({
       where: {
-        id: userData.userId
+        id: userData.userId,
       },
-      select: ["id", "password"]
+      select: ['id', 'password'],
     });
     if (!user) {
       throw new NotFoundException();
     }
     const isPasswordsMatch = await bcrypt.compare(
-        dto.oldPassword,
-        user.password,
+      dto.oldPassword,
+      user.password,
     );
 
     if (!isPasswordsMatch) {
@@ -421,7 +441,6 @@ export class AuthService {
     await this.userRepository.update(user.id, {
       password: newPassword,
     });
-    return "successful changePassword"
+    return 'successful changePassword';
   }
-
 }

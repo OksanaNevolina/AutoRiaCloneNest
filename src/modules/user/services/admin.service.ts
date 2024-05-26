@@ -11,12 +11,14 @@ import { CreateManagerRequestDto } from '../dto/request/create-manager.request.d
 import * as bcrypt from 'bcrypt';
 import { UserMapper } from './user.mapper';
 import { UserService } from './user.service';
+import { DealerRepository } from '../../repository/services/dealer.repository';
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly userService: UserService,
+    private readonly dealerRepository: DealerRepository,
   ) {}
 
   public async createManager(
@@ -38,8 +40,18 @@ export class AdminService {
       );
     }
     const password = await bcrypt.hash(dto.password, 10);
-    const user = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password, role: RoleEnum.MANAGER }),
+    const user = this.userRepository.create({
+      ...dto,
+      password,
+      role: RoleEnum.MANAGER,
+    });
+
+    if (dto.dealerId) {
+      user.dealer = await this.dealerRepository.findOneBy({ id: dto.dealerId });
+    }
+
+    await this.userRepository.save(
+      user,
     );
     return UserMapper.toResponseDto(user);
   }

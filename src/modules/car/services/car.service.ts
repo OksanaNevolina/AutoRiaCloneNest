@@ -1,34 +1,33 @@
-import {ForbiddenException, Injectable, Logger} from '@nestjs/common';
-import {BrandEntity} from '../../../database/entities/brand.entity';
-import {BrandRepository} from '../../repository/services/brand.repository';
-import {ModelRepository} from '../../repository/services/model.repository';
-import {ModelEntity} from '../../../database/entities/model.entity';
-import {CarBrandRequestDto} from '../dto/request/car.brand.request.dto';
-import {CarModelRequestDto} from '../dto/request/car.model.request.dto';
-import {CarRepository} from '../../repository/services/car.repository';
-import {CurrencyRateRepository} from '../../repository/services/currency-rate.repository';
-import {CarCreateRequestDto} from '../dto/request/car.create.request.dto';
-import {CarEntity} from '../../../database/entities/car.entity';
-import {IUserData} from '../../auth/interfaces/user-data.interface';
-import {AccountTypeEnum} from '../../../database/enums/account-type.enum';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { BrandEntity } from '../../../database/entities/brand.entity';
+import { BrandRepository } from '../../repository/services/brand.repository';
+import { ModelRepository } from '../../repository/services/model.repository';
+import { ModelEntity } from '../../../database/entities/model.entity';
+import { CarBrandRequestDto } from '../dto/request/car.brand.request.dto';
+import { CarModelRequestDto } from '../dto/request/car.model.request.dto';
+import { CarRepository } from '../../repository/services/car.repository';
+import { CurrencyRateRepository } from '../../repository/services/currency-rate.repository';
+import { CarCreateRequestDto } from '../dto/request/car.create.request.dto';
+import { CarEntity } from '../../../database/entities/car.entity';
+import { IUserData } from '../../auth/interfaces/user-data.interface';
+import { AccountTypeEnum } from '../../../database/enums/account-type.enum';
 
-import {CarReportRequestDto} from '../dto/request/car.report.request.dto';
-import {S3Service} from './s3.service';
-import {IPaginationResponseDto, IQuery} from '../types/pagination.type';
+import { CarReportRequestDto } from '../dto/request/car.report.request.dto';
+import { S3Service } from './s3.service';
+import { IPaginationResponseDto, IQuery } from '../types/pagination.type';
 
-import {UserRepository} from '../../repository/services/user.repository';
-import {ICar} from '../types/car.type';
-import {EmailActionEnum} from '../../auth/enums/email-action.enum';
-import {EmailService} from '../../auth/services/email.service';
-import {CarBrandResponceDto} from '../dto/response/car.brand.responce.dto';
-import {UserService} from '../../user/services/user.service';
-import {ViewLogEntity} from '../../../database/entities/viewLog.entity';
-import {ConstPermission} from '../../permission/constPermission/constPermission';
-import {ViewLogRepository} from '../../repository/services/view-log.repository';
-import {CurrencyEnum} from "../enums/currency.enum";
-import {CurrencyService} from "./currency.service";
-import {TypeFileUploadEnum} from "../enums/type-file-upload.enum";
-import {FileValidationService} from "./file.validation.service";
+import { UserRepository } from '../../repository/services/user.repository';
+import { ICar } from '../types/car.type';
+import { EmailActionEnum } from '../../auth/enums/email-action.enum';
+import { EmailService } from '../../auth/services/email.service';
+import { CarBrandResponceDto } from '../dto/response/car.brand.responce.dto';
+import { UserService } from '../../user/services/user.service';
+import { ViewLogEntity } from '../../../database/entities/viewLog.entity';
+import { ConstPermission } from '../../permission/constPermission/constPermission';
+import { ViewLogRepository } from '../../repository/services/view-log.repository';
+import { CurrencyEnum } from '../enums/currency.enum';
+import { TypeFileUploadEnum } from '../enums/type-file-upload.enum';
+import { FileValidationService } from './file.validation.service';
 
 @Injectable()
 export class CarService {
@@ -42,7 +41,7 @@ export class CarService {
     private readonly userRepository: UserRepository,
     private readonly userService: UserService,
     private readonly viewLogRepository: ViewLogRepository,
-    private readonly fileValidationService:FileValidationService,
+    private readonly fileValidationService: FileValidationService,
   ) {}
 
   public async getAllPaginated(
@@ -238,34 +237,50 @@ export class CarService {
 
       const attemptsCount = await this.getProfanityAttemptsCount(dto.modelId);
       if (attemptsCount >= 3) {
-        await this.carRepository.save(
-          this.carRepository.create({
-            ...dto,
-            price: basePrice,
-            currencyExchangeRate: currencyExchangeRate,
-            brand: { id: dto.brandId },
-            model: { id: dto.modelId },
-            createdBy: { id: userData.userId },
-            isActive: false,
-          }) as CarEntity,
-        );
-        await this.notifyManager(userData.userId);
-        throw new ForbiddenException(
-          'Ваше оголошення не пройшло модерацію через використання нецензурних слів',
-        );
-      }
-
-      return await this.carRepository.save(
-        this.carRepository.create({
+        const carEntity = this.carRepository.create({
           ...dto,
           price: basePrice,
           currencyExchangeRate: currencyExchangeRate,
           brand: { id: dto.brandId },
           model: { id: dto.modelId },
           createdBy: { id: userData.userId },
-          isActive: true,
-        }),
-      );
+          isActive: false,
+        }) as CarEntity;
+
+        const user = await this.userRepository.findOne({
+          where: { id: userData.userId },
+          relations: ['dealer'],
+        });
+
+        if (user.dealer) {
+          carEntity.dealer = user.dealer;
+        }
+
+        await this.notifyManager(userData.userId);
+        throw new ForbiddenException(
+          'Ваше оголошення не пройшло модерацію через використання нецензурних слів',
+        );
+      }
+      const carEntity = this.carRepository.create({
+        ...dto,
+        price: basePrice,
+        currencyExchangeRate: currencyExchangeRate,
+        brand: { id: dto.brandId },
+        model: { id: dto.modelId },
+        createdBy: { id: userData.userId },
+        isActive: true,
+      }) as CarEntity;
+
+      const user = await this.userRepository.findOne({
+        where: { id: userData.userId },
+        relations: ['dealer'],
+      });
+
+      if (user.dealer) {
+        carEntity.dealer = user.dealer;
+      }
+
+      return await this.carRepository.save(carEntity);
     } catch (error) {
       throw new Error(`Error creating car listing: ${error.message}`);
     }
@@ -295,36 +310,35 @@ export class CarService {
   }
 
   async uploadCarPhotos(carPhotos: Array<Express.Multer.File>, carId: string) {
-      try {
-        await this.fileValidationService.validateFiles(carPhotos)
+    try {
+      await this.fileValidationService.validateFiles(carPhotos);
 
-          const uploadedPhotos = [];
+      const uploadedPhotos = [];
 
-          for (const photo of carPhotos) {
-              const filePath = await this.s3Service.uploadFile(
-                  photo,
-                  TypeFileUploadEnum.CarPhotos,
-                  carId,
-              );
-              uploadedPhotos.push(filePath);
-          }
-
-          const car = await this.carRepository.findOneBy({ id: carId });
-
-          if (car) {
-              car.imageUrls = uploadedPhotos;
-              await this.carRepository.save(car);
-          }
-
-          return uploadedPhotos;
-      } catch (error) {
-          throw new Error(`Error uploading car photos: ${error.message}`);
+      for (const photo of carPhotos) {
+        const filePath = await this.s3Service.uploadFile(
+          photo,
+          TypeFileUploadEnum.CarPhotos,
+          carId,
+        );
+        uploadedPhotos.push(filePath);
       }
+
+      const car = await this.carRepository.findOneBy({ id: carId });
+
+      if (car) {
+        car.imageUrls = uploadedPhotos;
+        await this.carRepository.save(car);
+      }
+
+      return uploadedPhotos;
+    } catch (error) {
+      throw new Error(`Error uploading car photos: ${error.message}`);
+    }
   }
   async deletePhotoPath(carId: string, photoPath: string): Promise<void> {
     try {
       const decodedPhotoPath = decodeURIComponent(photoPath);
-      Logger.log(`Deleting file from S3: ${decodedPhotoPath}`);
 
       await this.s3Service.deleteFile(decodedPhotoPath);
 
@@ -335,10 +349,7 @@ export class CarService {
 
       car.imageUrls = car.imageUrls.filter((url) => url !== decodedPhotoPath);
       await this.carRepository.save(car);
-
-      Logger.log(`Successfully updated car image URLs for carId: ${carId}`);
     } catch (error) {
-      Logger.error(`Error deleting photo path: ${error.message}`);
       throw new Error(`Error deleting photo path: ${error.message}`);
     }
   }
@@ -445,13 +456,13 @@ export class CarService {
       const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       let totalViews = 0;
 
-        for (const view of car.viewsLog) {
-          const viewDate = new Date(view.timestamp);
-          if (viewDate >= oneWeekAgo && viewDate <= today) {
-            totalViews++;
-          }
+      for (const view of car.viewsLog) {
+        const viewDate = new Date(view.timestamp);
+        if (viewDate >= oneWeekAgo && viewDate <= today) {
+          totalViews++;
         }
-        return totalViews;
+      }
+      return totalViews;
     } catch (error) {
       throw new Error(`Error getting views this week: ${error.message}`);
     }
@@ -468,13 +479,13 @@ export class CarService {
       );
       let totalViews = 0;
 
-        for (const view of car.viewsLog) {
-          const viewDate = new Date(view.timestamp);
-          if (viewDate >= firstDayOfMonth && viewDate <= today) {
-            totalViews++;
-          }
+      for (const view of car.viewsLog) {
+        const viewDate = new Date(view.timestamp);
+        if (viewDate >= firstDayOfMonth && viewDate <= today) {
+          totalViews++;
         }
-        return totalViews;
+      }
+      return totalViews;
     } catch (error) {
       throw new Error(`Error getting views this month: ${error.message}`);
     }
@@ -484,13 +495,13 @@ export class CarService {
     region: string,
     brand: string,
     model: string,
-    currency:string
+    currency: string,
   ): Promise<number> {
     try {
-      const EUR = await this.currencyRateRepository.findOneBy({ccy:'EUR'});
-      const USD = await this.currencyRateRepository.findOneBy({ccy:"USD"})
+      const EUR = await this.currencyRateRepository.findOneBy({ ccy: 'EUR' });
+      const USD = await this.currencyRateRepository.findOneBy({ ccy: 'USD' });
       if (!EUR || !EUR.sale || !USD || !USD.sale) {
-        throw new Error("Currency rates are not available.");
+        throw new Error('Currency rates are not available.');
       }
 
       const carsMatchingCriteria =
@@ -505,13 +516,11 @@ export class CarService {
         (car) => car.currency === 'EUR',
       );
       const filteredCarsByCurrencyUSD = filteredCarsBrandAndModel.filter(
-          (car) => car.currency === 'USD',
+        (car) => car.currency === 'USD',
       );
       const filteredCarsByCurrencyUAH = filteredCarsBrandAndModel.filter(
-          (car) => car.currency === 'UAH',
+        (car) => car.currency === 'UAH',
       );
-
-
 
       const totalPricesEUR = filteredCarsByCurrencyEUR.reduce(
         (total, car) => total + parseFloat(String(car.price)),
@@ -521,22 +530,31 @@ export class CarService {
         (total, car) => total + parseFloat(String(car.price)),
         0,
       );
-      Logger.log(totalPricesUSD)
+      Logger.log(totalPricesUSD);
       const totalPricesUAH = filteredCarsByCurrencyUAH.reduce(
         (total, car) => total + parseFloat(String(car.price)),
         0,
       );
-          let totalPrices:number;
+      let totalPrices: number;
       switch (currency) {
         case 'EUR':
-           totalPrices= (totalPricesUAH/EUR.sale)+((totalPricesUSD*USD.sale)/EUR.sale)+totalPricesEUR;
+          totalPrices =
+            totalPricesUAH / EUR.sale +
+            (totalPricesUSD * USD.sale) / EUR.sale +
+            totalPricesEUR;
           break;
         case 'USD':
-          totalPrices= (totalPricesUAH/USD.sale)+((totalPricesEUR*EUR.sale)/USD.sale)+totalPricesUSD;
+          totalPrices =
+            totalPricesUAH / USD.sale +
+            (totalPricesEUR * EUR.sale) / USD.sale +
+            totalPricesUSD;
 
           break;
         case 'UAH':
-          totalPrices= (totalPricesEUR*EUR.sale)+(totalPricesUSD*USD.sale)+totalPricesUAH;
+          totalPrices =
+            totalPricesEUR * EUR.sale +
+            totalPricesUSD * USD.sale +
+            totalPricesUAH;
 
           break;
       }
@@ -549,7 +567,7 @@ export class CarService {
   async getAveragePriceByBrandAndModel(
     brand: string,
     model: string,
-    currency:string
+    currency: string,
   ): Promise<number> {
     try {
       const cars = await this.carRepository.find({
@@ -562,49 +580,50 @@ export class CarService {
       if (cars.length === 0) {
         return 0;
       }
-      const EUR = await this.currencyRateRepository.findOneBy({ccy:'EUR'});
-      const USD = await this.currencyRateRepository.findOneBy({ccy:"USD"})
+      const EUR = await this.currencyRateRepository.findOneBy({ ccy: 'EUR' });
+      const USD = await this.currencyRateRepository.findOneBy({ ccy: 'USD' });
       if (!EUR || !EUR.sale || !USD || !USD.sale) {
-        throw new Error("Currency rates are not available.");
+        throw new Error('Currency rates are not available.');
       }
       const filteredCarsByCurrencyEUR = cars.filter(
-          (car) => car.currency === 'EUR',
+        (car) => car.currency === 'EUR',
       );
       const filteredCarsByCurrencyUSD = cars.filter(
-          (car) => car.currency === 'USD',
+        (car) => car.currency === 'USD',
       );
       const filteredCarsByCurrencyUAH = cars.filter(
-          (car) => car.currency === 'UAH',
+        (car) => car.currency === 'UAH',
       );
       const totalEUR = filteredCarsByCurrencyEUR.reduce(
-          (total, car) => total + parseFloat(String(car.price)),
-          0,
+        (total, car) => total + parseFloat(String(car.price)),
+        0,
       );
       const totalUSD = filteredCarsByCurrencyUSD.reduce(
-          (total, car) => total + parseFloat(String(car.price)),
-          0,
+        (total, car) => total + parseFloat(String(car.price)),
+        0,
       );
 
       const totalUAH = filteredCarsByCurrencyUAH.reduce(
-          (total, car) => total + parseFloat(String(car.price)),
-          0,
+        (total, car) => total + parseFloat(String(car.price)),
+        0,
       );
-      let totalPrice:number;
+      let totalPrice: number;
       switch (currency) {
         case 'EUR':
-          totalPrice= (totalUAH/EUR.sale)+((totalUSD*USD.sale)/EUR.sale)+totalEUR;
+          totalPrice =
+            totalUAH / EUR.sale + (totalUSD * USD.sale) / EUR.sale + totalEUR;
           break;
         case 'USD':
-          totalPrice= (totalUAH/USD.sale)+((totalEUR*EUR.sale)/USD.sale)+totalUSD;
+          totalPrice =
+            totalUAH / USD.sale + (totalEUR * EUR.sale) / USD.sale + totalUSD;
 
           break;
         case 'UAH':
-          totalPrice= (totalEUR*EUR.sale)+(totalUSD*USD.sale)+totalUAH;
+          totalPrice = totalEUR * EUR.sale + totalUSD * USD.sale + totalUAH;
 
           break;
       }
       return totalPrice / cars.length;
-
     } catch (error) {
       throw new Error(`Error getting average price: ${error.message}`);
     }
