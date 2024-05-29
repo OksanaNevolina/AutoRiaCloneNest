@@ -12,6 +12,7 @@ import { UserResponseDto } from '../dto/response/user.response.dto';
 import { UpdateUserRequestDto } from '../dto/request/update-user.request.dto';
 import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';
 import { UserEntity } from '../../../database/entities/user.entity';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -76,8 +77,12 @@ export class UserService {
     return entity;
   }
 
-  public async isEmailUniqueOrThrow(email: string): Promise<void> {
-    const user = await this.userRepository.findOneBy({ email });
+  public async isEmailUniqueOrThrow(
+    email: string,
+    em?: EntityManager,
+  ): Promise<void> {
+    const userRepository = em.getRepository(UserEntity) ?? this.userRepository;
+    const user = await userRepository.findOneBy({ email });
     if (user) {
       throw new ConflictException('Email is already in use');
     }

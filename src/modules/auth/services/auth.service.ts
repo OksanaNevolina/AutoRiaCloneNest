@@ -27,6 +27,11 @@ import { UserEntity } from '../../../database/entities/user.entity';
 import { SetForgotPasswordRequestDto } from '../dto/request/set-forgot-password.request.dto';
 import { ChangePasswordRequestDto } from '../dto/request/change-password.request.dto';
 import { DealerRepository } from '../../repository/services/dealer.repository';
+import { DataSource, EntityManager } from 'typeorm';
+import { DealerEntity } from '../../../database/entities/dealer.entity';
+import { RefreshTokenEntity } from '../../../database/entities/refresh-token.entity';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { ActionTokenEntity } from '../../../database/entities/action-token.entity';
 
 @Injectable()
 export class AuthService {
@@ -39,25 +44,33 @@ export class AuthService {
     private readonly actionTokenRepository: ActionTokenRepository,
     private readonly emailService: EmailService,
     private readonly dealerRepository: DealerRepository,
+    private readonly dataSource: DataSource,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
   ) {}
 
   public async signUpSeller(
     dto: SignUpRequestDto,
   ): Promise<AuthUserResponseDto> {
-    await this.userService.isEmailUniqueOrThrow(dto.email);
+    const user = await this.dataSource.transaction(
+      async (em: EntityManager) => {
+        await this.userService.isEmailUniqueOrThrow(dto.email, em);
+        const userRepository = em.getRepository(UserEntity);
 
-    const password = await bcrypt.hash(dto.password, 10);
+        const password = await bcrypt.hash(dto.password, 10);
+        const user = userRepository.create({
+          ...dto,
+          password,
+          role: RoleEnum.SELLER,
+        });
 
-    const user = this.userRepository.create({
-      ...dto,
-      password,
-      role: RoleEnum.SELLER,
-    });
-    if (dto.dealerId) {
-      user.dealer = await this.dealerRepository.findOneBy({ id: dto.dealerId });
-    }
-    await this.userRepository.save(
-      user,
+        const dealerRepository = em.getRepository(DealerEntity);
+        if (dto.dealerId) {
+          user.dealer = await dealerRepository.findOneBy({ id: dto.dealerId });
+        }
+
+        return await userRepository.save(user);
+      },
     );
 
     const tokens = await this.tokenService.generateAuthTokens(
@@ -83,20 +96,27 @@ export class AuthService {
   public async signUpAdmin(
     dto: SignUpRequestDto,
   ): Promise<AuthUserResponseDto> {
-    await this.userService.isEmailUniqueOrThrow(dto.email);
+    const user = await this.dataSource.transaction(
+      async (em: EntityManager) => {
+        await this.userService.isEmailUniqueOrThrow(dto.email, em);
+        const userRepository = em.getRepository(UserEntity);
 
-    const password = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepository.create({
-      ...dto,
-      password,
-      role: RoleEnum.ADMIN,
-    });
-    if (dto.dealerId) {
-      user.dealer = await this.dealerRepository.findOneBy({ id: dto.dealerId });
-    }
-    await this.userRepository.save(
-        user,
+        const password = await bcrypt.hash(dto.password, 10);
+        const user = userRepository.create({
+          ...dto,
+          password,
+          role: RoleEnum.ADMIN,
+        });
+
+        const dealerRepository = em.getRepository(DealerEntity);
+        if (dto.dealerId) {
+          user.dealer = await dealerRepository.findOneBy({ id: dto.dealerId });
+        }
+
+        return await userRepository.save(user);
+      },
     );
+
     const tokens = await this.tokenService.generateAuthTokens(
       {
         userId: user.id,
@@ -104,7 +124,6 @@ export class AuthService {
       },
       RoleEnum.ADMIN,
     );
-
     await Promise.all([
       this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
       this.authCacheService.saveToken(
@@ -120,327 +139,384 @@ export class AuthService {
   public async signInSeller(
     dto: SignInRequestDto,
   ): Promise<AuthUserResponseDto> {
-    const userEntity = await this.userRepository.findOne({
-      where: { email: dto.email },
-      select: { id: true, password: true },
-    });
-    if (!userEntity) {
-      throw new UnauthorizedException();
-    }
+    return await this.dataSource.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
 
-    const isPasswordsMatch = await bcrypt.compare(
-      dto.password,
-      userEntity.password,
-    );
+      const userEntity = await userRepository.findOne({
+        where: { email: dto.email },
+        select: { id: true, password: true },
+      });
+      if (!userEntity) {
+        throw new UnauthorizedException();
+      }
 
-    if (!isPasswordsMatch) {
-      throw new UnauthorizedException();
-    }
+      const isPasswordsMatch = await bcrypt.compare(
+        dto.password,
+        userEntity.password,
+      );
 
-    const user = await this.userRepository.findOneBy({ id: userEntity.id });
+      if (!isPasswordsMatch) {
+        throw new UnauthorizedException();
+      }
 
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.SELLER,
-      },
-      RoleEnum.SELLER,
-    );
+      const user = await userRepository.findOneBy({ id: userEntity.id });
 
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: user.id,
-      }),
-      this.authCacheService.removeToken(user.id),
-    ]);
-
-    await Promise.all([
-      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
-        user.id,
-        tokens.accessToken,
+      const tokens = await this.tokenService.generateAuthTokens(
+        {
+          userId: user.id,
+          role: RoleEnum.SELLER,
+        },
         RoleEnum.SELLER,
-      ),
-    ]);
+      );
 
-    return AuthMapper.toResponseDto(user, tokens);
+      await Promise.all([
+        this.refreshTokenRepository.delete({
+          user_id: user.id,
+        }),
+        this.authCacheService.removeToken(user.id),
+      ]);
+
+      await Promise.all([
+        this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken, em),
+        this.authCacheService.saveToken(
+          user.id,
+          tokens.accessToken,
+          RoleEnum.SELLER,
+        ),
+      ]);
+
+      return AuthMapper.toResponseDto(user, tokens);
+    });
   }
 
   public async signInManager(
     dto: SignInRequestDto,
   ): Promise<AuthUserResponseDto> {
-    const userEntity = await this.userRepository.findOne({
-      where: { email: dto.email },
-      select: { id: true, password: true },
-    });
-    if (!userEntity) {
-      throw new UnauthorizedException();
-    }
+    return await this.dataSource.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
+      const refreshTokenRepository = em.getRepository(RefreshTokenEntity);
 
-    const isPasswordsMatch = await bcrypt.compare(
-      dto.password,
-      userEntity.password,
-    );
+      const userEntity = await userRepository.findOne({
+        where: { email: dto.email },
+        select: { id: true, password: true },
+      });
+      if (!userEntity) {
+        throw new UnauthorizedException();
+      }
 
-    if (!isPasswordsMatch) {
-      throw new UnauthorizedException();
-    }
+      const isPasswordsMatch = await bcrypt.compare(
+        dto.password,
+        userEntity.password,
+      );
 
-    const user = await this.userRepository.findOneBy({ id: userEntity.id });
+      if (!isPasswordsMatch) {
+        throw new UnauthorizedException();
+      }
 
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.MANAGER,
-      },
-      RoleEnum.MANAGER,
-    );
+      const user = await userRepository.findOneBy({ id: userEntity.id });
 
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: user.id,
-      }),
-      this.authCacheService.removeToken(user.id),
-    ]);
-
-    await Promise.all([
-      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
-        user.id,
-        tokens.accessToken,
+      const tokens = await this.tokenService.generateAuthTokens(
+        {
+          userId: user.id,
+          role: RoleEnum.MANAGER,
+        },
         RoleEnum.MANAGER,
-      ),
-    ]);
+      );
 
-    return AuthMapper.toResponseDto(user, tokens);
+      await Promise.all([
+        refreshTokenRepository.delete({
+          user_id: user.id,
+        }),
+        this.authCacheService.removeToken(user.id),
+      ]);
+
+      await Promise.all([
+        this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken, em),
+        this.authCacheService.saveToken(
+          user.id,
+          tokens.accessToken,
+          RoleEnum.MANAGER,
+        ),
+      ]);
+
+      return AuthMapper.toResponseDto(user, tokens);
+    });
   }
 
   public async signInAdmin(
     dto: SignInRequestDto,
   ): Promise<AuthUserResponseDto> {
-    const userEntity = await this.userRepository.findOne({
-      where: { email: dto.email },
-      select: { id: true, password: true },
-    });
-    if (!userEntity) {
-      throw new UnauthorizedException();
-    }
+    return await this.dataSource.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
+      const refreshTokenRepository = new RefreshTokenRepository(
+        this.dataSource,
+      );
 
-    const isPasswordsMatch = await bcrypt.compare(
-      dto.password,
-      userEntity.password,
-    );
+      const userEntity = await userRepository.findOne({
+        where: { email: dto.email },
+        select: { id: true, password: true },
+      });
+      if (!userEntity) {
+        throw new UnauthorizedException();
+      }
 
-    if (!isPasswordsMatch) {
-      throw new UnauthorizedException();
-    }
+      const isPasswordsMatch = await bcrypt.compare(
+        dto.password,
+        userEntity.password,
+      );
 
-    const user = await this.userRepository.findOneBy({ id: userEntity.id });
+      if (!isPasswordsMatch) {
+        throw new UnauthorizedException();
+      }
 
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.ADMIN,
-      },
-      RoleEnum.ADMIN,
-    );
+      const user = await userRepository.findOneBy({ id: userEntity.id });
 
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: user.id,
-      }),
-      this.authCacheService.removeToken(user.id),
-    ]);
+      const tokens = await this.tokenService.generateAuthTokens(
+        {
+          userId: user.id,
+          role: RoleEnum.ADMIN,
+        },
+        RoleEnum.ADMIN,
+      );
 
-    await Promise.all([
-      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
+      await Promise.all([
+        refreshTokenRepository.delete({
+          user_id: user.id,
+        }),
+        this.authCacheService.removeToken(user.id),
+      ]);
+
+      await refreshTokenRepository.saveToken(user.id, tokens.refreshToken, em);
+      await this.authCacheService.saveToken(
         user.id,
         tokens.accessToken,
         RoleEnum.ADMIN,
-      ),
-    ]);
+      );
 
-    return AuthMapper.toResponseDto(user, tokens);
+      return AuthMapper.toResponseDto(user, tokens);
+    });
   }
 
   public async logout(userData: IUserData): Promise<void> {
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: userData.userId,
-      }),
-      this.authCacheService.removeToken(userData.userId),
-    ]);
+    await this.entityManager.transaction(async (em: EntityManager) => {
+      const refreshTokenRepository = em.getRepository(RefreshTokenEntity);
+
+      await Promise.all([
+        refreshTokenRepository.delete({
+          user_id: userData.userId,
+        }),
+        this.authCacheService.removeToken(userData.userId),
+      ]);
+    });
   }
 
   public async updateRefreshTokenSeller(
     userData: IUserData,
   ): Promise<TokenResponseDto> {
-    const user = await this.userRepository.findOneBy({
-      id: userData.userId,
-    });
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
+      const refreshTokenRepository = this.entityManager.getRepository(
+        RefreshTokenEntity,
+      ) as RefreshTokenRepository;
 
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: user.id,
-      }),
-      this.authCacheService.removeToken(user.id),
-    ]);
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.SELLER,
-      },
-      RoleEnum.SELLER,
-    );
+      const user = await userRepository.findOneBy({
+        id: userData.userId,
+      });
 
-    await Promise.all([
-      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
-        user.id,
-        tokens.accessToken,
+      await Promise.all([
+        refreshTokenRepository.delete({
+          user_id: user.id,
+        }),
+        this.authCacheService.removeToken(user.id),
+      ]);
+
+      const tokens = await this.tokenService.generateAuthTokens(
+        {
+          userId: user.id,
+          role: RoleEnum.SELLER,
+        },
         RoleEnum.SELLER,
-      ),
-    ]);
-    return tokens;
-  }
+      );
 
+      await Promise.all([
+        refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
+        this.authCacheService.saveToken(
+          user.id,
+          tokens.accessToken,
+          RoleEnum.SELLER,
+        ),
+      ]);
+
+      return tokens;
+    });
+  }
   public async updateRefreshTokenAdmin(
     userData: IUserData,
   ): Promise<TokenResponseDto> {
-    const user = await this.userRepository.findOneBy({
-      id: userData.userId,
-    });
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
+      const refreshTokenRepository = this.entityManager.getRepository(
+        RefreshTokenEntity,
+      ) as RefreshTokenRepository;
 
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: user.id,
-      }),
-      this.authCacheService.removeToken(user.id),
-    ]);
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.ADMIN,
-      },
-      RoleEnum.ADMIN,
-    );
+      const user = await userRepository.findOneBy({
+        id: userData.userId,
+      });
 
-    await Promise.all([
-      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
-        user.id,
-        tokens.accessToken,
+      await Promise.all([
+        refreshTokenRepository.delete({
+          user_id: user.id,
+        }),
+        this.authCacheService.removeToken(user.id),
+      ]);
+
+      const tokens = await this.tokenService.generateAuthTokens(
+        {
+          userId: user.id,
+          role: RoleEnum.ADMIN,
+        },
         RoleEnum.ADMIN,
-      ),
-    ]);
-    return tokens;
+      );
+
+      await Promise.all([
+        refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
+        this.authCacheService.saveToken(
+          user.id,
+          tokens.accessToken,
+          RoleEnum.ADMIN,
+        ),
+      ]);
+
+      return tokens;
+    });
   }
 
   public async updateRefreshTokenManager(
     userData: IUserData,
   ): Promise<TokenResponseDto> {
-    const user = await this.userRepository.findOneBy({
-      id: userData.userId,
-    });
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
+      const refreshTokenRepository = this.entityManager.getRepository(
+        RefreshTokenEntity,
+      ) as RefreshTokenRepository;
 
-    await Promise.all([
-      this.refreshTokenRepository.delete({
-        user_id: user.id,
-      }),
-      this.authCacheService.removeToken(user.id),
-    ]);
-    const tokens = await this.tokenService.generateAuthTokens(
-      {
-        userId: user.id,
-        role: RoleEnum.MANAGER,
-      },
-      RoleEnum.MANAGER,
-    );
+      const user = await userRepository.findOneBy({
+        id: userData.userId,
+      });
 
-    await Promise.all([
-      this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
-      this.authCacheService.saveToken(
-        user.id,
-        tokens.accessToken,
+      await Promise.all([
+        refreshTokenRepository.delete({
+          user_id: user.id,
+        }),
+        this.authCacheService.removeToken(user.id),
+      ]);
+
+      const tokens = await this.tokenService.generateAuthTokens(
+        {
+          userId: user.id,
+          role: RoleEnum.MANAGER,
+        },
         RoleEnum.MANAGER,
-      ),
-    ]);
-    return tokens;
+      );
+
+      await Promise.all([
+        refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
+        this.authCacheService.saveToken(
+          user.id,
+          tokens.accessToken,
+          RoleEnum.MANAGER,
+        ),
+      ]);
+
+      return tokens;
+    });
   }
 
   public async forgotPassword(dto: ForgotPasswordRequestDto): Promise<string> {
-    const user: UserEntity = await this.userRepository.findOneBy({
-      email: dto.email,
-    });
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-    const actionToken = await this.tokenService.createActionToken(
-      { userId: user.id, role: RoleEnum.SELLER },
-      ActionTokenTypeEnum.FORGOT,
-    );
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
+      const actionTokenRepository = em.getRepository(
+        ActionTokenEntity,
+      ) as ActionTokenRepository;
+      const user: UserEntity = await userRepository.findOneBy({
+        email: dto.email,
+      });
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+      const actionToken = await this.tokenService.createActionToken(
+        { userId: user.id, role: RoleEnum.SELLER },
+        ActionTokenTypeEnum.FORGOT,
+      );
 
-    await this.actionTokenRepository.saveActionToken(user.id, actionToken);
-    await this.emailService.sendMail(
-      user.email,
-      EmailActionEnum.FORGOT_PASSWORD,
-      {
-        actionToken,
-      },
-    );
-    return 'successful forgotPassword';
+      await actionTokenRepository.saveActionToken(user.id, actionToken);
+      await this.emailService.sendMail(
+        user.email,
+        EmailActionEnum.FORGOT_PASSWORD,
+        {
+          actionToken,
+        },
+      );
+      return 'successful forgotPassword';
+    });
   }
 
   public async setForgotPassword(
     dto: SetForgotPasswordRequestDto,
     actionToken: string,
   ) {
-    const payload = await this.tokenService.checkActionToken(
-      actionToken,
-      ActionTokenTypeEnum.FORGOT,
-    );
-    const entity = await this.actionTokenRepository.findOneBy({
-      actionToken,
-    });
-    if (!entity) {
-      throw new BadRequestException();
-    }
-    const newHashedPassword = await bcrypt.hash(dto.password, 10);
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const actionTokenRepository = em.getRepository(ActionTokenEntity);
+      const userRepository = em.getRepository(UserEntity);
+      const payload = await this.tokenService.checkActionToken(
+        actionToken,
+        ActionTokenTypeEnum.FORGOT,
+      );
+      const entity = await actionTokenRepository.findOneBy({
+        actionToken,
+      });
+      if (!entity) {
+        throw new BadRequestException();
+      }
+      const newHashedPassword = await bcrypt.hash(dto.password, 10);
 
-    await this.userRepository.update(payload.userId, {
-      password: newHashedPassword,
-    });
+      await userRepository.update(payload.userId, {
+        password: newHashedPassword,
+      });
 
-    await this.actionTokenRepository.delete({ actionToken });
-    return 'successful setForgotPassword ';
+      await actionTokenRepository.delete({ actionToken });
+      return 'successful setForgotPassword ';
+    });
   }
   public async changePassword(
     dto: ChangePasswordRequestDto,
     userData: IUserData,
   ): Promise<string> {
-    const user = await this.userRepository.findOne({
-      where: {
-        id: userData.userId,
-      },
-      select: ['id', 'password'],
-    });
-    if (!user) {
-      throw new NotFoundException();
-    }
-    const isPasswordsMatch = await bcrypt.compare(
-      dto.oldPassword,
-      user.password,
-    );
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity)
+      const user = await userRepository.findOne({
+        where: {
+          id: userData.userId,
+        },
+        select: ['id', 'password'],
+      });
+      if (!user) {
+        throw new NotFoundException();
+      }
+      const isPasswordsMatch = await bcrypt.compare(
+        dto.oldPassword,
+        user.password,
+      );
 
-    if (!isPasswordsMatch) {
-      throw new BadRequestException('Incorrect password');
-    }
-    const newPassword = await bcrypt.hash(dto.newPassword, 10);
+      if (!isPasswordsMatch) {
+        throw new BadRequestException('Incorrect password');
+      }
+      const newPassword = await bcrypt.hash(dto.newPassword, 10);
 
-    await this.userRepository.update(user.id, {
-      password: newPassword,
+      await userRepository.update(user.id, {
+        password: newPassword,
+      });
+      return 'successful changePassword';
     });
-    return 'successful changePassword';
   }
 }

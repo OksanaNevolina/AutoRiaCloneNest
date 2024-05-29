@@ -1,4 +1,4 @@
-import {Injectable, Logger, UnauthorizedException} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -7,7 +7,7 @@ import { TokenResponseDto } from '../dto/response/token.response.dto';
 import { TokenType } from '../enums/token-type.enum';
 import { JwtPayload } from '../types/jwt-payload.type';
 import { RoleEnum } from '../../../database/enums/role-enum';
-import {ActionTokenTypeEnum} from "../enums/action-token-type.enum";
+import { ActionTokenTypeEnum } from '../enums/action-token-type.enum';
 
 @Injectable()
 export class TokenService {
@@ -121,10 +121,7 @@ export class TokenService {
     }
   }
 
-  private async checkTokenSeller(
-    token: string,
-    type: TokenType,
-  ): Promise<any> {
+  private async checkTokenSeller(token: string, type: TokenType): Promise<any> {
     try {
       let secret: string;
 
@@ -136,15 +133,17 @@ export class TokenService {
           secret = this.jwtConfig.sellerRefreshTokenSecret;
           break;
       }
-      return await this.jwtService.verifyAsync(token, { secret }) as JwtPayload;
+      return (await this.jwtService.verifyAsync(token, {
+        secret,
+      })) as JwtPayload;
     } catch (e) {
       throw new UnauthorizedException();
     }
   }
-  public async  createActionToken(
-      payload: JwtPayload,
-      tokenType: ActionTokenTypeEnum,
-  ):Promise<string> {
+  public async createActionToken(
+    payload: JwtPayload,
+    tokenType: ActionTokenTypeEnum,
+  ): Promise<string> {
     let secret: string;
 
     switch (tokenType) {
@@ -155,11 +154,14 @@ export class TokenService {
         throw new UnauthorizedException();
     }
     return await this.jwtService.signAsync(payload, {
-     secret: secret,
-     expiresIn: this.jwtConfig.forgotExpiration,
-   });
+      secret: secret,
+      expiresIn: this.jwtConfig.forgotExpiration,
+    });
   }
-  public async checkActionToken(actionToken: string, type: ActionTokenTypeEnum) :Promise<JwtPayload>{
+  public async checkActionToken(
+    actionToken: string,
+    type: ActionTokenTypeEnum,
+  ): Promise<JwtPayload> {
     try {
       let secret: string;
 
@@ -170,10 +172,8 @@ export class TokenService {
       }
 
       return await this.jwtService.verifyAsync(actionToken, { secret });
-
     } catch (e) {
       throw new UnauthorizedException();
     }
   }
-
 }
