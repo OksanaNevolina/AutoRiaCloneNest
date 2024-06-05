@@ -315,16 +315,12 @@ export class AuthService {
   ): Promise<TokenResponseDto> {
     return await this.entityManager.transaction(async (em: EntityManager) => {
       const userRepository = em.getRepository(UserEntity);
-      const refreshTokenRepository = this.entityManager.getRepository(
-        RefreshTokenEntity,
-      ) as RefreshTokenRepository;
-
       const user = await userRepository.findOneBy({
         id: userData.userId,
       });
 
       await Promise.all([
-        refreshTokenRepository.delete({
+        this.refreshTokenRepository.delete({
           user_id: user.id,
         }),
         this.authCacheService.removeToken(user.id),
@@ -339,7 +335,7 @@ export class AuthService {
       );
 
       await Promise.all([
-        refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
+        this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
         this.authCacheService.saveToken(
           user.id,
           tokens.accessToken,
@@ -355,16 +351,14 @@ export class AuthService {
   ): Promise<TokenResponseDto> {
     return await this.entityManager.transaction(async (em: EntityManager) => {
       const userRepository = em.getRepository(UserEntity);
-      const refreshTokenRepository = this.entityManager.getRepository(
-        RefreshTokenEntity,
-      ) as RefreshTokenRepository;
+
 
       const user = await userRepository.findOneBy({
         id: userData.userId,
       });
 
       await Promise.all([
-        refreshTokenRepository.delete({
+        this.refreshTokenRepository.delete({
           user_id: user.id,
         }),
         this.authCacheService.removeToken(user.id),
@@ -379,7 +373,7 @@ export class AuthService {
       );
 
       await Promise.all([
-        refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
+        this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
         this.authCacheService.saveToken(
           user.id,
           tokens.accessToken,
@@ -396,16 +390,12 @@ export class AuthService {
   ): Promise<TokenResponseDto> {
     return await this.entityManager.transaction(async (em: EntityManager) => {
       const userRepository = em.getRepository(UserEntity);
-      const refreshTokenRepository = this.entityManager.getRepository(
-        RefreshTokenEntity,
-      ) as RefreshTokenRepository;
-
       const user = await userRepository.findOneBy({
         id: userData.userId,
       });
 
       await Promise.all([
-        refreshTokenRepository.delete({
+        this.refreshTokenRepository.delete({
           user_id: user.id,
         }),
         this.authCacheService.removeToken(user.id),
@@ -420,7 +410,7 @@ export class AuthService {
       );
 
       await Promise.all([
-        refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
+        this.refreshTokenRepository.saveToken(user.id, tokens.refreshToken),
         this.authCacheService.saveToken(
           user.id,
           tokens.accessToken,
@@ -435,9 +425,7 @@ export class AuthService {
   public async forgotPassword(dto: ForgotPasswordRequestDto): Promise<string> {
     return await this.entityManager.transaction(async (em: EntityManager) => {
       const userRepository = em.getRepository(UserEntity);
-      const actionTokenRepository = em.getRepository(
-        ActionTokenEntity,
-      ) as ActionTokenRepository;
+
       const user: UserEntity = await userRepository.findOneBy({
         email: dto.email,
       });
@@ -449,7 +437,7 @@ export class AuthService {
         ActionTokenTypeEnum.FORGOT,
       );
 
-      await actionTokenRepository.saveActionToken(user.id, actionToken);
+      await this.actionTokenRepository.saveActionToken(user.id, actionToken);
       await this.emailService.sendMail(
         user.email,
         EmailActionEnum.FORGOT_PASSWORD,

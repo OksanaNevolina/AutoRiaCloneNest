@@ -8,7 +8,6 @@ export class ProfanityService {
 
     containsProfanity(text: string): boolean {
         const words = text.toLowerCase().split(/\s+/);
-        Logger.log(words)
         for (const word of words) {
             if (this.profanityWords.includes(word)) {
                 return true;

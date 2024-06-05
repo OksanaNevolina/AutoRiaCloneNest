@@ -4,12 +4,16 @@ import { CurrencyRateEntity } from "../../../database/entities/currency-rate.ent
 import { CurrencyRateRepository } from "../../repository/services/currency-rate.repository";
 import { Cron } from '@nestjs/schedule';
 import {CurrencyEnum} from "../enums/currency.enum";
+import {InjectEntityManager} from "@nestjs/typeorm";
+import {EntityManager} from "typeorm";
 
 @Injectable()
 export class CurrencyService {
     constructor(
 
         private readonly currencyRateRepository: CurrencyRateRepository,
+        @InjectEntityManager()
+        private readonly entityManager:EntityManager
     ) {}
 
     @Cron("44 17 * * *")
@@ -19,31 +23,29 @@ export class CurrencyService {
                 "https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5",
             );
             const currencyRates = response.data;
-            Logger.log(currencyRates)
             await this.updateCurrencyRates(currencyRates);
-            Logger.log(currencyRates)
 
-            console.log("Currency rates updated successfully.");
         } catch (error) {
-            console.error("Error updating currency rates:", error.message);
+            throw new Error("Error updating currency rates")
         }
     }
     async updateCurrencyRates(currencyRates: CurrencyRateEntity[]): Promise<void> {
-        for (const rate of currencyRates) {
-            const existingRate = await this.currencyRateRepository.findOneBy({ ccy: rate.ccy });
+        await this.entityManager.transaction(async (em:EntityManager)=>{
+            const currencyRateRepository = em.getRepository(CurrencyRateEntity)
+            for (const rate of currencyRates) {
+                const existingRate = await this.currencyRateRepository.findOneBy({ ccy: rate.ccy });
 
-            if (existingRate) {
-                existingRate.buy = rate.buy;
-                existingRate.sale = rate.sale;
-                existingRate.updated = new Date();
-                await this.currencyRateRepository.save(existingRate);
-            } else {
-                await this.currencyRateRepository.save(rate);
+                if (existingRate) {
+                    existingRate.buy = rate.buy;
+                    existingRate.sale = rate.sale;
+                    existingRate.updated = new Date();
+                    await currencyRateRepository.save(existingRate);
+                } else {
+                    await currencyRateRepository.save(rate);
+                }
             }
-        }
+        })
+
     }
 
-    async getCurrencyRate(currencyCode: CurrencyEnum): Promise<CurrencyRateEntity | undefined> {
-      return await this.currencyRateRepository.findOneBy({ ccy:currencyCode });
-    }
 }
