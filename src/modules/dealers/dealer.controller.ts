@@ -11,9 +11,10 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DealerService } from './services/dealer.service';
 import { CreateDealerDto } from './dto/request/сreate.dealer.dto';
 import { UpdateDealerDto } from './dto/request/update.dealer.dto';
-import {DealerEntity} from "../../database/entities/dealer.entity";
-import {CurrentUser} from "../auth/decorators/current-user.decorator";
-import {IUserData} from "../auth/interfaces/user-data.interface";
+import { DealerEntity } from '../../database/entities/dealer.entity';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { IUserData } from '../auth/interfaces/user-data.interface';
+import { SkipAuth } from '../auth/decorators/skip-auth.decorator';
 
 @ApiTags('Dealers')
 @Controller('dealers')
@@ -24,14 +25,20 @@ export class DealerController {
   @ApiBearerAuth()
   @Post('create')
   create(
-      @Body() createDealerDto: CreateDealerDto,
-      @CurrentUser()userData:IUserData
-  ):Promise<DealerEntity> {
-    return this.dealerService.create(createDealerDto,userData);
+    @Body() createDealerDto: CreateDealerDto,
+    @CurrentUser() userData: IUserData,
+  ): Promise<DealerEntity> {
+    return this.dealerService.create(createDealerDto, userData);
   }
 
+  @SkipAuth()
+  @ApiOperation({ summary: 'Get all' })
+  @Get()
+  getAll() {
+    return this.dealerService.getAll();
+  }
+  @SkipAuth()
   @ApiOperation({ summary: 'Get dealer by id' })
-  @ApiBearerAuth()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.dealerService.findOne(id);

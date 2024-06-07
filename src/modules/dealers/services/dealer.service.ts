@@ -1,44 +1,78 @@
-import {Injectable, NotFoundException} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DealerEntity } from '../../../database/entities/dealer.entity';
 import { CreateDealerDto } from '../dto/request/сreate.dealer.dto';
 import { UpdateDealerDto } from '../dto/request/update.dealer.dto';
-import {DealerRepository} from '../../repository/services/dealer.repository';
-import {IUserData} from "../../auth/interfaces/user-data.interface";
-import {CarEntity} from "../../../database/entities/car.entity";
-import {UserEntity} from "../../../database/entities/user.entity";
-import {CarRepository} from "../../repository/services/car.repository";
-import {UserRepository} from "../../repository/services/user.repository";
-import {DataSource} from "typeorm";
+import { DealerRepository } from '../../repository/services/dealer.repository';
+import { IUserData } from '../../auth/interfaces/user-data.interface';
+import { CarEntity } from '../../../database/entities/car.entity';
+import { UserEntity } from '../../../database/entities/user.entity';
+import { CarRepository } from '../../repository/services/car.repository';
+import { UserRepository } from '../../repository/services/user.repository';
+import {DataSource, EntityManager} from 'typeorm';
+import {InjectEntityManager} from "@nestjs/typeorm";
 
 @Injectable()
 export class DealerService {
   constructor(
-      private readonly dealerRepository: DealerRepository,
-      private readonly carRepository: CarRepository,
-      private readonly userRepository: UserRepository,
-      private readonly dataSource: DataSource,
+    private readonly dealerRepository: DealerRepository,
+    private readonly carRepository: CarRepository,
+    private readonly userRepository: UserRepository,
+    private readonly dataSource: DataSource,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager
   ) {}
 
-  async create(createDealerDto: CreateDealerDto,userData:IUserData): Promise<DealerEntity> {
-    return this.dealerRepository.save(this.dealerRepository.create({...createDealerDto, createdDealer: { id: userData.userId }}),);
+  async create(
+    createDealerDto: CreateDealerDto,
+    userData: IUserData,
+  ): Promise<DealerEntity> {
+    return await this.entityManager.transaction(async (em:EntityManager)=>{
+      const dealerRepository  = em.getRepository(DealerEntity)
+      return dealerRepository.save(
+          dealerRepository.create({
+            ...createDealerDto,
+            createdDealer: { id: userData.userId },
+          }),
+      );
+    })
+
+  }
+
+  async getAll(): Promise<DealerEntity[]> {
+      return await this.entityManager.transaction(async (em:EntityManager)=>{
+          const dealerRepository  = em.getRepository(DealerEntity)
+
+          return dealerRepository.find({relations: ['employees', 'cars', 'createdDealer'],});
+      })
+
   }
 
   async findOne(id: string): Promise<DealerEntity> {
-    return this.dealerRepository.findOne({
-      where: { id },
-      relations: ['employees','cars','createdDealer'],
-    });
+      return await this.entityManager.transaction(async (em:EntityManager)=>{
+          const dealerRepository  = em.getRepository(DealerEntity)
+
+          return dealerRepository.findOne({
+              where: { id },
+              relations: ['employees', 'cars', 'createdDealer'],
+          });
+      })
+
   }
 
   async update(
     id: string,
     updateDealerDto: UpdateDealerDto,
   ): Promise<DealerEntity> {
-    await this.dealerRepository.update(id, updateDealerDto);
-    return this.dealerRepository.findOne({
-      where: { id },
-      relations: ['employees','cars','createdDealer'],
-    });
+      return await this.entityManager.transaction(async (em:EntityManager)=>{
+          const dealerRepository  = em.getRepository(DealerEntity)
+
+          await dealerRepository.update(id, updateDealerDto);
+          return dealerRepository.findOne({
+              where: { id },
+              relations: ['employees', 'cars', 'createdDealer'],
+          });
+      })
+
   }
   async remove(id: string): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -60,9 +94,10 @@ export class DealerService {
         await queryRunner.manager.update(CarEntity, car.id, { dealer: null });
       }
 
-
       for (const employee of dealer.employees) {
-        await queryRunner.manager.update(UserEntity, employee.id, { dealer: null });
+        await queryRunner.manager.update(UserEntity, employee.id, {
+          dealer: null,
+        });
       }
       await queryRunner.manager.delete(DealerEntity, id);
 
@@ -75,4 +110,3 @@ export class DealerService {
     }
   }
 }
-
