@@ -85,7 +85,7 @@ export class UserController {
   }
   @ApiOperation({ summary: 'Upgrade to premium' })
   @ApiBearerAuth()
-  @Post('upgrade-to-premium/:userId')
+  @Put('upgrade-to-premium/:userId')
   public async upgradeToPremium(
     @Param('userId') userId: string,
     @CurrentUser() userData: IUserData

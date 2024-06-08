@@ -12,6 +12,10 @@ import * as bcrypt from 'bcrypt';
 import { UserMapper } from './user.mapper';
 import { UserService } from './user.service';
 import { DealerRepository } from '../../repository/services/dealer.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import {UserEntity} from "../../../database/entities/user.entity";
+import {DealerEntity} from "../../../database/entities/dealer.entity";
 
 @Injectable()
 export class AdminService {
@@ -19,40 +23,45 @@ export class AdminService {
     private readonly userRepository: UserRepository,
     private readonly userService: UserService,
     private readonly dealerRepository: DealerRepository,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
   ) {}
 
   public async createManager(
     userData: IUserData,
     dto: CreateManagerRequestDto,
   ): Promise<UserResponseDto> {
-    const admin = await this.userService.findByIdOrThrow(userData.userId);
-    if (!admin || admin.role !== RoleEnum.ADMIN) {
-      throw new UnauthorizedException(
-        'Only administrators can create managers',
-      );
-    }
-    const existingUser = await this.userRepository.findOneBy({
-      email: dto.email,
-    });
-    if (existingUser) {
-      throw new NotFoundException(
-        `User with email ${dto.email} already exists`,
-      );
-    }
-    const password = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepository.create({
-      ...dto,
-      password,
-      role: RoleEnum.MANAGER,
-    });
+    return await this.entityManager.transaction(async (em:EntityManager)=>{
+      const userRepository = em.getRepository(UserEntity)
+      const dealerRepository = em.getRepository(DealerEntity)
+      const admin = await this.userService.findByIdOrThrow(userData.userId,em);
+      if (!admin || admin.role !== RoleEnum.ADMIN) {
+        throw new UnauthorizedException(
+            'Only administrators can create managers',
+        );
+      }
+      const existingUser = await userRepository.findOneBy({
+        email: dto.email,
+      });
+      if (existingUser) {
+        throw new NotFoundException(
+            `User with email ${dto.email} already exists`,
+        );
+      }
+      const password = await bcrypt.hash(dto.password, 10);
+      const user = userRepository.create({
+        ...dto,
+        password,
+        role: RoleEnum.MANAGER,
+      });
 
-    if (dto.dealerId) {
-      user.dealer = await this.dealerRepository.findOneBy({ id: dto.dealerId });
-    }
+      if (dto.dealerId) {
+        user.dealer = await dealerRepository.findOneBy({ id: dto.dealerId });
+      }
 
-    await this.userRepository.save(
-      user,
-    );
-    return UserMapper.toResponseDto(user);
+      await userRepository.save(user);
+      return UserMapper.toResponseDto(user);
+    })
+
   }
 }

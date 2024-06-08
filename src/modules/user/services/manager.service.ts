@@ -3,79 +3,93 @@ import { UserResponseDto } from '../dto/response/user.response.dto';
 import { UserRepository } from '../../repository/services/user.repository';
 import { IUserData } from '../../auth/interfaces/user-data.interface';
 import { ConstPermission } from '../../permission/constPermission/constPermission';
+import {InjectEntityManager} from "@nestjs/typeorm";
+import {EntityManager} from "typeorm";
+import {UserEntity} from "../../../database/entities/user.entity";
 
 @Injectable()
 export class ManagerService {
   constructor(
     private readonly userRepository: UserRepository,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
   ) {}
 
   async banUser(
     userIdForBun: string,
     userData: IUserData,
   ): Promise<UserResponseDto> {
-    try {
-      const userId = userData.userId;
-      const user = await this.userRepository
-        .createQueryBuilder('user')
-        .leftJoinAndSelect('user.permissions', 'permission')
-        .where('user.id = :userId', { userId })
-        .getOne();
+    return await this.entityManager.transaction(async (em:EntityManager)=>{
+      const userRepository = em.getRepository(UserEntity)
+      try {
+        const userId = userData.userId;
+        const user = await userRepository
+            .createQueryBuilder('user')
+            .leftJoinAndSelect('user.permissions', 'permission')
+            .where('user.id = :userId', { userId })
+            .getOne();
 
-      if (
-        !user.permissions.some(
-          (permission) => permission.name === ConstPermission.BAN,
-        )
-      ) {
-        throw new UnauthorizedException(
-          'You do not have permission to ban users',
-        );
+        if (
+            !user.permissions.some(
+                (permission) => permission.name === ConstPermission.BAN,
+            )
+        ) {
+          throw new UnauthorizedException(
+              'You do not have permission to ban users',
+          );
+        }
+
+        const userToBan = await userRepository.findOneBy({
+          id: userIdForBun,
+        });
+
+        if (userToBan.isBanned) {
+          throw new Error('User is already banned');
+        }
+
+        userToBan.isBanned = true;
+        return await userRepository.save(userToBan);
+      } catch (error) {
+        throw new Error(`Error banning user: ${error.message}`);
       }
+    })
 
-      const userToBan = await this.userRepository.findOneBy({
-        id: userIdForBun,
-      });
-
-      if (userToBan.isBanned) {
-        throw new Error('User is already banned');
-      }
-
-      userToBan.isBanned = true;
-      return await this.userRepository.save(userToBan);
-    } catch (error) {
-      throw new Error(`Error banning user: ${error.message}`);
-    }
   }
 
   async deBanUser(
     userIdForUnBan: string,
     userData: IUserData,
   ): Promise<UserResponseDto> {
-    try {
-      const userId = userData.userId;
-      const user = await this.userRepository
-        .createQueryBuilder('user')
-        .leftJoinAndSelect('user.permissions', 'permission')
-        .where('user.id = :userId', { userId })
-        .getOne();
+    return await this.entityManager.transaction(async (em:EntityManager)=>{
+      const userRepository = em.getRepository(UserEntity)
+      try {
+        const userId = userData.userId;
+        const user = await userRepository
+            .createQueryBuilder('user')
+            .leftJoinAndSelect('user.permissions', 'permission')
+            .where('user.id = :userId', { userId })
+            .getOne();
 
-      if (
-        !user.permissions.some(
-          (permission) => permission.name === ConstPermission.UNBAN,
-        )
-      ) {
-        throw new UnauthorizedException(
-          'You do not have permission to unban users',
-        );
+        if (
+            !user.permissions.some(
+                (permission) => permission.name === ConstPermission.UNBAN,
+            )
+        ) {
+          throw new UnauthorizedException(
+              'You do not have permission to unban users',
+          );
+        }
+        const userUNBAN = await userRepository.findOneBy({
+          id: userIdForUnBan,
+        });
+
+        userUNBAN.isBanned = false;
+        return await userRepository.save(userUNBAN);
+      } catch (error) {
+        throw new Error(`Error unbanning user: ${error.message}`);
       }
-      const userUNBAN = await this.userRepository.findOneBy({
-        id: userIdForUnBan,
-      });
+    })
 
-      userUNBAN.isBanned = false;
-      return await this.userRepository.save(userUNBAN);
-    } catch (error) {
-      throw new Error(`Error unbanning user: ${error.message}`);
-    }
   }
 }
+             
