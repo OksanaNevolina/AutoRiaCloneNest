@@ -3,17 +3,16 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from './decorators/current-user.decorator';
 import { SkipAuth } from './decorators/skip-auth.decorator';
+import { ChangePasswordRequestDto } from './dto/request/change-password.request.dto';
+import { ForgotPasswordRequestDto } from './dto/request/forgot-password.request.dto';
+import { SetForgotPasswordRequestDto } from './dto/request/set-forgot-password.request.dto';
 import { SignInRequestDto } from './dto/request/sign-in.request.dto';
 import { SignUpRequestDto } from './dto/request/sign-up.request.dto';
 import { AuthUserResponseDto } from './dto/response/auth-user.response.dto';
 import { TokenResponseDto } from './dto/response/token.response.dto';
-
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { IUserData } from './interfaces/user-data.interface';
 import { AuthService } from './services/auth.service';
-import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import { ForgotPasswordRequestDto } from './dto/request/forgot-password.request.dto';
-import { SetForgotPasswordRequestDto } from './dto/request/set-forgot-password.request.dto';
-import { ChangePasswordRequestDto } from './dto/request/change-password.request.dto';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -111,7 +110,7 @@ export class AuthController {
     @CurrentUser() userData: IUserData,
     @Body() dto: ChangePasswordRequestDto,
   ): Promise<string> {
-    return await this.authService.changePassword(dto,userData);
+    return await this.authService.changePassword(dto, userData);
   }
   @SkipAuth()
   @ApiOperation({ summary: 'Forgot password' })

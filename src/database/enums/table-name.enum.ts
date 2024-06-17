@@ -8,5 +8,5 @@ export enum TableNameEnum {
   USERS = 'users',
   ACTION_TOKEN = 'action_token',
   VIEWlOG = 'viewLog',
-  DEALER = 'dealer'
+  DEALER = 'dealer',
 }

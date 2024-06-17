@@ -1,13 +1,11 @@
-import process from "node:process";
-
 export type Config = {
   app: AppConfig;
   postgres: PostgresConfig;
   redis: RedisConfig;
   jwt: JWTConfig;
-  smtp:SMTPConfig;
-  frontURL:frontURLConfig;
-  AWSs3:AWSs3Config
+  smtp: SMTPConfig;
+  frontURL: frontURLConfig;
+  AWSs3: AWSs3Config;
 };
 
 export type AppConfig = {
@@ -22,8 +20,8 @@ export type PostgresConfig = {
   dbName: string;
 };
 export type frontURLConfig = {
-  frontURL:string
-}
+  frontURL: string;
+};
 
 export type RedisConfig = {
   port: number;
@@ -43,18 +41,17 @@ export type JWTConfig = {
   adminAccessTokenExpiration: number;
   adminRefreshTokenSecret: string;
   adminRefreshTokenExpiration: number;
-  forgotSecret:string;
-  forgotExpiration:number
+  forgotSecret: string;
+  forgotExpiration: number;
 };
-export type SMTPConfig={
-  userSmtp : string,
-  passSmtp:string
-}
-export  type AWSs3Config={
-
-    awsS3AccessKey:string
-    awsS3SecretKey:string
-    awsS3BucketName:string
-    awsS3Region:string
-    awsS3URL:string
-}
+export type SMTPConfig = {
+  userSmtp: string;
+  passSmtp: string;
+};
+export type AWSs3Config = {
+  awsS3AccessKey: string;
+  awsS3SecretKey: string;
+  awsS3BucketName: string;
+  awsS3Region: string;
+  awsS3URL: string;
+};

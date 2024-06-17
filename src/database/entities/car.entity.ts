@@ -1,12 +1,12 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import { TableNameEnum } from '../enums/table-name.enum';
-import { BaseEntity } from './models/base.entity';
-import { BrandEntity } from './brand.entity';
-import { ModelEntity } from './model.entity';
-import { UserEntity } from './user.entity';
-import {ViewLogEntity} from "./viewLog.entity";
-import {DealerEntity} from "./dealer.entity";
 
+import { TableNameEnum } from '../enums/table-name.enum';
+import { BrandEntity } from './brand.entity';
+import { DealerEntity } from './dealer.entity';
+import { ModelEntity } from './model.entity';
+import { BaseEntity } from './models/base.entity';
+import { UserEntity } from './user.entity';
+import { ViewLogEntity } from './viewLog.entity';
 
 @Entity(TableNameEnum.CAR)
 export class CarEntity extends BaseEntity {

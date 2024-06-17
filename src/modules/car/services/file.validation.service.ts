@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+
 import { fileUploadCarConfig } from '../../../configs/file.upload.car.config';
 
 @Injectable()
 export class FileValidationService {
   constructor() {}
 
-   public validateFiles(files: Express.Multer.File[]) {
+  public validateFiles(files: Express.Multer.File[]) {
     files.forEach((file) => {
       if (!fileUploadCarConfig.MIMETYPE.includes(file.mimetype)) {
         throw new BadRequestException(`Invalid file type: ${file.mimetype}`);

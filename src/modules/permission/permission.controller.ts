@@ -1,20 +1,22 @@
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Body,
-  Controller, Delete,
+  Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { PermissionResponseDto } from './dto/response/permission.response.dto';
-import { PermissionRequestDto } from './dto/request/permission.request.dto';
-import { PermissionService } from './services/permission.service';
-import { IUserData } from '../auth/interfaces/user-data.interface';
-import { AdminGuard } from '../auth/guards/admin.guard';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { PermissionEntity } from '../../database/entities/permission.entity';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { IUserData } from '../auth/interfaces/user-data.interface';
+import { PermissionRequestDto } from './dto/request/permission.request.dto';
+import { PermissionResponseDto } from './dto/response/permission.response.dto';
+import { PermissionService } from './services/permission.service';
 
 @ApiTags('Permission')
 @Controller('permissions')
@@ -58,7 +60,7 @@ export class PermissionController {
   @ApiOperation({ summary: 'Delete permission' })
   @Delete('delete-permission/:idPermission')
   async deletePermissions(
-      @Param('idPermission') idPermission: string,
+    @Param('idPermission') idPermission: string,
   ): Promise<void> {
     return await this.permissionService.deletePermissions(idPermission);
   }

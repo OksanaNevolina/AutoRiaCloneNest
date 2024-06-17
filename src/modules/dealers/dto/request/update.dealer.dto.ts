@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+
 import { TransformHelper } from '../../../../common/helpers/transform.helper';
 
 export class UpdateDealerDto {

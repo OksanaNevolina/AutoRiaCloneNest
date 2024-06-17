@@ -4,9 +4,10 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { ProfanityService } from '../services/profanity.service';
+
 import { CarCreateRequestDto } from '../dto/request/car.create.request.dto';
 import { CarService } from '../services/car.service';
+import { ProfanityService } from '../services/profanity.service';
 
 @Injectable()
 export class ProfanityGuard implements CanActivate {

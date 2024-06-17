@@ -1,6 +1,7 @@
-import { ICar } from '../types/car.type';
 import { ConfigService } from '@nestjs/config';
+
 import { Config } from '../../../configs/config.type';
+import { ICar } from '../types/car.type';
 
 interface AWSs3Config {
   awsS3URL: string;
@@ -9,9 +10,7 @@ interface AWSs3Config {
 export class CarMapper {
   private AWSs3Config: AWSs3Config;
 
-  constructor(
-      private readonly configService: ConfigService<Config>
-  ) {
+  constructor(private readonly configService: ConfigService<Config>) {
     this.AWSs3Config = this.configService.get<AWSs3Config>('AWSs3');
   }
 
@@ -25,7 +24,9 @@ export class CarMapper {
       price: carEntity.price,
       currency: carEntity.currency,
       currencyExchangeRate: carEntity.currencyExchangeRate,
-      imageUrls: carEntity.imageUrls ? carEntity.imageUrls.map(url => `${this.AWSs3Config.awsS3URL}${url}`) : [],
+      imageUrls: carEntity.imageUrls
+        ? carEntity.imageUrls.map((url) => `${this.AWSs3Config.awsS3URL}${url}`)
+        : [],
       brand: carEntity.brand,
       model: carEntity.model,
       created: carEntity.created,
@@ -34,4 +35,3 @@ export class CarMapper {
     };
   }
 }
-

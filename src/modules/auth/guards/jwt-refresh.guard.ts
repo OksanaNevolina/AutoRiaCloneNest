@@ -1,15 +1,16 @@
 import {
   CanActivate,
   ExecutionContext,
-  Injectable, Logger,
+  Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { RoleEnum } from '../../../database/enums/role-enum';
 import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';
 import { UserRepository } from '../../repository/services/user.repository';
 import { TokenType } from '../enums/token-type.enum';
 import { TokenService } from '../services/token.service';
-import { RoleEnum } from '../../../database/enums/role-enum';
 
 @Injectable()
 export class JwtRefreshGuard implements CanActivate {
@@ -26,13 +27,13 @@ export class JwtRefreshGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     const role = request.headers.role as RoleEnum;
-    Logger.log(role,refreshToken)
+    Logger.log(role, refreshToken);
     const payload = await this.tokenService.checkToken(
       refreshToken,
       TokenType.REFRESH,
       role,
     );
-    Logger.log(payload)
+    Logger.log(payload);
     if (!payload) {
       throw new UnauthorizedException();
     }

@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { Config, JWTConfig } from '../../../configs/config.type';
+import { RoleEnum } from '../../../database/enums/role-enum';
 import { RedisService } from '../../redis/redis.service';
 import { AUTH_CACHE } from '../constants/constants';
-import { RoleEnum } from '../../../database/enums/role-enum';
 
 @Injectable()
 export class AuthCacheService {

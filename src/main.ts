@@ -1,16 +1,16 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './modules/app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { SwaggerHelper } from './common/helpers/swagger.helper';
-import { GlobalExceptionFilter } from './common/exeptions/global-exception.filter';
 import { Logger, ValidationPipe } from '@nestjs/common';
-
-import { AppConfig, Config } from './configs/config.type';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+import { GlobalExceptionFilter } from './common/exeptions/global-exception.filter';
+import { SwaggerHelper } from './common/helpers/swagger.helper';
+import { AppConfig, Config } from './configs/config.type';
+import { AppModule } from './modules/app.module';
 
 async function bootstrap() {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    const app = await NestFactory.create(AppModule);
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
     .setTitle('AutoRiaCloneNest API')

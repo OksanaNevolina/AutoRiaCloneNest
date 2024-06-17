@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-
-import { AccountTypeEnum } from '../../../database/enums/account-type.enum';
-import { UserRepository } from '../../repository/services/user.repository';
-import { UserEntity } from '../../../database/entities/user.entity';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+
+import { UserEntity } from '../../../database/entities/user.entity';
+import { AccountTypeEnum } from '../../../database/enums/account-type.enum';
+import { UserRepository } from '../../repository/services/user.repository';
 
 @Injectable()
 export class AccountService {
