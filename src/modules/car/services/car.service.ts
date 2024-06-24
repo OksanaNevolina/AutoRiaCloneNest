@@ -380,16 +380,14 @@ export class CarService {
   }
   async deletePhotoPath(carId: string, photoPath: string): Promise<void> {
     try {
-      const decodedPhotoPath = decodeURIComponent(photoPath);
-
-      await this.s3Service.deleteFile(decodedPhotoPath);
+      await this.s3Service.deleteFile(photoPath);
 
       const car = await this.carRepository.findOneBy({ id: carId });
       if (!car.imageUrls) {
         return;
       }
 
-      car.imageUrls = car.imageUrls.filter((url) => url !== decodedPhotoPath);
+      car.imageUrls = car.imageUrls.filter((url) => url !== photoPath);
       await this.carRepository.save(car);
     } catch (error) {
       throw new Error(`Error deleting photo path: ${error.message}`);

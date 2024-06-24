@@ -186,10 +186,7 @@ export class CarController {
   ): Promise<{ message: string }> {
     Logger.log(`Deleting photo for carId: ${carId}, photoPath: ${photoPath}`);
     try {
-      await this.carService.deletePhotoPath(
-        carId,
-        decodeURIComponent(photoPath),
-      );
+      await this.carService.deletePhotoPath(carId, photoPath);
       return { message: 'Photo deleted successfully' };
     } catch (error) {
       return { message: `Error deleting photo: ${error.message}` };
