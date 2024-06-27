@@ -13,8 +13,8 @@ import { UpdateUserRequestDto } from '../dto/request/update-user.request.dto';
 import { RefreshTokenRepository } from '../../repository/services/refresh-token.repository';
 import { UserEntity } from '../../../database/entities/user.entity';
 import { EntityManager } from 'typeorm';
-import {InjectEntityManager} from "@nestjs/typeorm";
-import {RefreshTokenEntity} from "../../../database/entities/refresh-token.entity";
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { RefreshTokenEntity } from '../../../database/entities/refresh-token.entity';
 
 @Injectable()
 export class UserService {
@@ -22,12 +22,12 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     @InjectEntityManager()
-    private readonly entityManager:EntityManager
+    private readonly entityManager: EntityManager,
   ) {}
 
   public async findMe(userData: IUserData): Promise<UserResponseDto> {
-    return await this.entityManager.transaction(async (em:EntityManager)=>{
-      const userRepository = em.getRepository(UserEntity)
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
       try {
         const entity = await userRepository.findOneBy({
           id: userData.userId,
@@ -36,32 +36,31 @@ export class UserService {
       } catch (error) {
         throw new UnprocessableEntityException('User not found');
       }
-    })
+    });
   }
 
   public async updateMe(
     userData: IUserData,
     dto: UpdateUserRequestDto,
   ): Promise<UserResponseDto> {
-    return await this.entityManager.transaction(async (em:EntityManager)=>{
-      const userRepository = em.getRepository(UserEntity)
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
       try {
-        const entity = await this.findByIdOrThrow(userData.userId,em);
+        const entity = await this.findByIdOrThrow(userData.userId, em);
         const user = await userRepository.save({ ...entity, ...dto });
         return UserMapper.toResponseDto(user);
       } catch (error) {
         throw new UnprocessableEntityException('Failed to update user data');
       }
-    })
-
+    });
   }
 
   public async deleteMe(userData: IUserData): Promise<void> {
-    await this.entityManager.transaction(async (em:EntityManager)=>{
-      const refreshTokenRepository = em.getRepository(RefreshTokenEntity)
-      const userRepository = em.getRepository(UserEntity)
+    await this.entityManager.transaction(async (em: EntityManager) => {
+      const refreshTokenRepository = em.getRepository(RefreshTokenEntity);
+      const userRepository = em.getRepository(UserEntity);
       try {
-        const user = await this.findByIdOrThrow(userData.userId,em);
+        const user = await this.findByIdOrThrow(userData.userId, em);
         if (!user) {
           throw new NotFoundException('User not found');
         }
@@ -72,20 +71,22 @@ export class UserService {
 
         await refreshTokenRepository.delete({ user: user });
         await Promise.all(
-            refreshTokens.map(async (token) => {
-              await refreshTokenRepository.remove(token);
-            }),
+          refreshTokens.map(async (token) => {
+            await refreshTokenRepository.remove(token);
+          }),
         );
 
         await userRepository.remove(user);
       } catch (error) {
         throw new UnprocessableEntityException('Failed to delete user data');
       }
-    })
-
+    });
   }
 
-  public async findByIdOrThrow(userId: string,em?:EntityManager): Promise<UserEntity> {
+  public async findByIdOrThrow(
+    userId: string,
+    em?: EntityManager,
+  ): Promise<UserEntity> {
     const userRepository = em.getRepository(UserEntity) ?? this.userRepository;
     const entity = await userRepository.findOneBy({ id: userId });
     if (!entity) {

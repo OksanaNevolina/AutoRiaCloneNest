@@ -39,11 +39,9 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly tokenService: TokenService,
     private readonly authCacheService: AuthCacheService,
-    private readonly userRepository: UserRepository,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly actionTokenRepository: ActionTokenRepository,
     private readonly emailService: EmailService,
-    private readonly dealerRepository: DealerRepository,
     private readonly dataSource: DataSource,
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
@@ -352,7 +350,6 @@ export class AuthService {
     return await this.entityManager.transaction(async (em: EntityManager) => {
       const userRepository = em.getRepository(UserEntity);
 
-
       const user = await userRepository.findOneBy({
         id: userData.userId,
       });
@@ -481,7 +478,7 @@ export class AuthService {
     userData: IUserData,
   ): Promise<string> {
     return await this.entityManager.transaction(async (em: EntityManager) => {
-      const userRepository = em.getRepository(UserEntity)
+      const userRepository = em.getRepository(UserEntity);
       const user = await userRepository.findOne({
         where: {
           id: userData.userId,

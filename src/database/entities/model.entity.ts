@@ -1,8 +1,9 @@
-import { TableNameEnum } from '../enums/table-name.enum';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import { BaseEntity } from './models/base.entity';
+
+import { TableNameEnum } from '../enums/table-name.enum';
 import { BrandEntity } from './brand.entity';
 import { CarEntity } from './car.entity';
+import { BaseEntity } from './models/base.entity';
 
 @Entity(TableNameEnum.MODEL)
 export class ModelEntity extends BaseEntity {

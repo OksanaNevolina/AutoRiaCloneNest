@@ -1,12 +1,20 @@
-import {Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany} from 'typeorm';
-import { TableNameEnum } from '../enums/table-name.enum';
-import { BaseEntity } from './models/base.entity';
-import { RefreshTokenEntity } from './refresh-token.entity';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
+
 import { AccountTypeEnum } from '../enums/account-type.enum';
 import { RoleEnum } from '../enums/role-enum';
-import {PermissionEntity} from "./permission.entity";
-import {CarEntity} from "./car.entity";
-import {DealerEntity} from "./dealer.entity";
+import { TableNameEnum } from '../enums/table-name.enum';
+import { CarEntity } from './car.entity';
+import { DealerEntity } from './dealer.entity';
+import { BaseEntity } from './models/base.entity';
+import { PermissionEntity } from './permission.entity';
+import { RefreshTokenEntity } from './refresh-token.entity';
 
 @Entity(TableNameEnum.USERS)
 export class UserEntity extends BaseEntity {
@@ -40,6 +48,8 @@ export class UserEntity extends BaseEntity {
   permissions?: PermissionEntity[];
   @OneToMany(() => CarEntity, (car) => car.createdBy)
   cars: CarEntity[];
-  @ManyToOne(() => DealerEntity, (dealer) => dealer.employees, { nullable: true })
+  @ManyToOne(() => DealerEntity, (dealer) => dealer.employees, {
+    nullable: true,
+  })
   dealer: DealerEntity | null;
 }

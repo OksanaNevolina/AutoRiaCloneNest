@@ -1,7 +1,8 @@
-import {Column, Entity, ManyToOne, OneToMany} from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+
 import { TableNameEnum } from '../enums/table-name.enum';
-import { BaseEntity } from './models/base.entity';
 import { CarEntity } from './car.entity';
+import { BaseEntity } from './models/base.entity';
 import { UserEntity } from './user.entity';
 
 @Entity(TableNameEnum.DEALER)
@@ -15,7 +16,7 @@ export class DealerEntity extends BaseEntity {
   @Column()
   contact: string;
 
-  @ManyToOne(() => UserEntity, (user) =>  user.dealer)
+  @ManyToOne(() => UserEntity, (user) => user.dealer)
   createdDealer: UserEntity;
 
   @OneToMany(() => UserEntity, (user) => user.dealer)
