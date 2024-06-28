@@ -1,11 +1,12 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UserResponseDto } from '../dto/response/user.response.dto';
-import { UserRepository } from '../../repository/services/user.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+
+import { UserEntity } from '../../../database/entities/user.entity';
 import { IUserData } from '../../auth/interfaces/user-data.interface';
 import { ConstPermission } from '../../permission/constPermission/constPermission';
-import {InjectEntityManager} from "@nestjs/typeorm";
-import {EntityManager} from "typeorm";
-import {UserEntity} from "../../../database/entities/user.entity";
+import { UserRepository } from '../../repository/services/user.repository';
+import { UserResponseDto } from '../dto/response/user.response.dto';
 
 @Injectable()
 export class ManagerService {
@@ -19,23 +20,23 @@ export class ManagerService {
     userIdForBun: string,
     userData: IUserData,
   ): Promise<UserResponseDto> {
-    return await this.entityManager.transaction(async (em:EntityManager)=>{
-      const userRepository = em.getRepository(UserEntity)
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
       try {
         const userId = userData.userId;
         const user = await userRepository
-            .createQueryBuilder('user')
-            .leftJoinAndSelect('user.permissions', 'permission')
-            .where('user.id = :userId', { userId })
-            .getOne();
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.permissions', 'permission')
+          .where('user.id = :userId', { userId })
+          .getOne();
 
         if (
-            !user.permissions.some(
-                (permission) => permission.name === ConstPermission.BAN,
-            )
+          !user.permissions.some(
+            (permission) => permission.name === ConstPermission.BAN,
+          )
         ) {
           throw new UnauthorizedException(
-              'You do not have permission to ban users',
+            'You do not have permission to ban users',
           );
         }
 
@@ -52,31 +53,30 @@ export class ManagerService {
       } catch (error) {
         throw new Error(`Error banning user: ${error.message}`);
       }
-    })
-
+    });
   }
 
   async deBanUser(
     userIdForUnBan: string,
     userData: IUserData,
   ): Promise<UserResponseDto> {
-    return await this.entityManager.transaction(async (em:EntityManager)=>{
-      const userRepository = em.getRepository(UserEntity)
+    return await this.entityManager.transaction(async (em: EntityManager) => {
+      const userRepository = em.getRepository(UserEntity);
       try {
         const userId = userData.userId;
         const user = await userRepository
-            .createQueryBuilder('user')
-            .leftJoinAndSelect('user.permissions', 'permission')
-            .where('user.id = :userId', { userId })
-            .getOne();
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.permissions', 'permission')
+          .where('user.id = :userId', { userId })
+          .getOne();
 
         if (
-            !user.permissions.some(
-                (permission) => permission.name === ConstPermission.UNBAN,
-            )
+          !user.permissions.some(
+            (permission) => permission.name === ConstPermission.UNBAN,
+          )
         ) {
           throw new UnauthorizedException(
-              'You do not have permission to unban users',
+            'You do not have permission to unban users',
           );
         }
         const userUNBAN = await userRepository.findOneBy({
@@ -88,8 +88,6 @@ export class ManagerService {
       } catch (error) {
         throw new Error(`Error unbanning user: ${error.message}`);
       }
-    })
-
+    });
   }
 }
-             

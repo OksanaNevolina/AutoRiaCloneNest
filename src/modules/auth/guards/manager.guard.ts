@@ -1,18 +1,17 @@
-import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
-import { Observable } from "rxjs";
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Observable } from 'rxjs';
 
-import { IUserData } from "../interfaces/user-data.interface";
-import { RoleEnum } from "../../../database/enums/role-enum";
-import {UserEntity} from "../../../database/entities/user.entity";
+import { UserEntity } from '../../../database/entities/user.entity';
+import { RoleEnum } from '../../../database/enums/role-enum';
 
 @Injectable()
 export class ManagerGuard implements CanActivate {
-    canActivate(
-        context: ExecutionContext,
-    ): boolean | Promise<boolean> | Observable<boolean> {
-        const request = context.switchToHttp().getRequest();
-        const user:UserEntity = request.user;
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const user: UserEntity = request.user;
 
-        return user.role === RoleEnum.MANAGER;
-    }
+    return user.role === RoleEnum.MANAGER;
+  }
 }

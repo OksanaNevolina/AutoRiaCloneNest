@@ -6,12 +6,12 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
+import { RoleEnum } from '../../../database/enums/role-enum';
 import { UserRepository } from '../../repository/services/user.repository';
 import { SKIP_AUTH } from '../constants/constants';
 import { TokenType } from '../enums/token-type.enum';
 import { AuthCacheService } from '../services/auth-cache.service';
 import { TokenService } from '../services/token.service';
-import { RoleEnum } from '../../../database/enums/role-enum';
 
 @Injectable()
 export class JwtAccessGuard implements CanActivate {
@@ -61,8 +61,8 @@ export class JwtAccessGuard implements CanActivate {
     request.user = {
       userId: user.id,
       email: user.email,
-      role:user.role,
-      accountType:user.accountType
+      role: user.role,
+      accountType: user.accountType,
     };
     return true;
   }

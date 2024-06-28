@@ -8,13 +8,14 @@ import {
   Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { DealerService } from './services/dealer.service';
-import { CreateDealerDto } from './dto/request/сreate.dealer.dto';
-import { UpdateDealerDto } from './dto/request/update.dealer.dto';
+
 import { DealerEntity } from '../../database/entities/dealer.entity';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IUserData } from '../auth/interfaces/user-data.interface';
 import { SkipAuth } from '../auth/decorators/skip-auth.decorator';
+import { IUserData } from '../auth/interfaces/user-data.interface';
+import { UpdateDealerDto } from './dto/request/update.dealer.dto';
+import { CreateDealerDto } from './dto/request/сreate.dealer.dto';
+import { DealerService } from './services/dealer.service';
 
 @ApiTags('Dealers')
 @Controller('dealers')

@@ -2,7 +2,8 @@ import {
   Body,
   Controller,
   Delete,
-  Get, Logger,
+  Get,
+  Logger,
   Param,
   Post,
   Query,
@@ -10,26 +11,26 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-
+import { ConfigService } from '@nestjs/config';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { CarEntity } from '../../database/entities/car.entity';
 import { ModelEntity } from '../../database/entities/model.entity';
-import { CarReportRequestDto } from './dto/request/car.report.request.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { SkipAuth } from '../auth/decorators/skip-auth.decorator';
+import { IUserData } from '../auth/interfaces/user-data.interface';
+import { CarBrandRequestDto } from './dto/request/car.brand.request.dto';
 import { CarCreateRequestDto } from './dto/request/car.create.request.dto';
 import { CarModelRequestDto } from './dto/request/car.model.request.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IUserData } from '../auth/interfaces/user-data.interface';
+import { CarReportRequestDto } from './dto/request/car.report.request.dto';
+import { CarBrandResponceDto } from './dto/response/car.brand.responce.dto';
+import { PremiumAccountGuard } from './guards/PremiumAccountGuard';
+import { ProfanityGuard } from './guards/ProfanityGuard';
 import { CarMapper } from './services/car.mapper';
-import { CarBrandRequestDto } from './dto/request/car.brand.request.dto';
 import { CarService } from './services/car.service';
 import { ICar } from './types/car.type';
 import { IPaginationResponseDto, IQuery } from './types/pagination.type';
-import { CarEntity } from '../../database/entities/car.entity';
-import { ProfanityGuard } from './guards/ProfanityGuard';
-import { SkipAuth } from '../auth/decorators/skip-auth.decorator';
-import { CarBrandResponceDto } from './dto/response/car.brand.responce.dto';
-import { PremiumAccountGuard } from './guards/PremiumAccountGuard';
-import { FilesInterceptor } from '@nestjs/platform-express';
-import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Cars')
 @Controller('cars')
@@ -65,7 +66,7 @@ export class CarController {
   @ApiOperation({ summary: 'Get car by id' })
   @Get(':carId')
   async getCarById(@Param('carId') carId: string): Promise<CarEntity> {
-    return this.carService.getById(carId);
+    return await this.carService.getById(carId);
   }
 
   @ApiOperation({ summary: 'Get all models by brand' })
@@ -74,7 +75,7 @@ export class CarController {
   async getAllModelsByBrand(
     @Param('brandId') brandId: string,
   ): Promise<ModelEntity[]> {
-    return this.carService.getAllModelsByBrand(brandId);
+    return await this.carService.getAllModelsByBrand(brandId);
   }
   @ApiOperation({ summary: 'Report manager' })
   @ApiBearerAuth()
@@ -82,7 +83,7 @@ export class CarController {
   async reportMissingBrandOrModel(
     @Body() dto: CarReportRequestDto,
   ): Promise<void> {
-    return this.carService.reportMissingBrandOrModel(dto);
+    return await this.carService.reportMissingBrandOrModel(dto);
   }
 
   @ApiOperation({ summary: 'Create brand' })
@@ -110,7 +111,7 @@ export class CarController {
     @CurrentUser() userData: IUserData,
     @Param('brandId') brandId: string,
   ): Promise<ModelEntity> {
-    return this.carService.createModel(dto, userData, brandId);
+    return await this.carService.createModel(dto, userData, brandId);
   }
 
   @ApiOperation({ summary: 'Delete model' })
@@ -128,7 +129,7 @@ export class CarController {
     @Body() dto: CarCreateRequestDto,
     @CurrentUser() userData: IUserData,
   ): Promise<CarEntity> {
-    return this.carService.createCarListing(dto, userData);
+    return await this.carService.createCarListing(dto, userData);
   }
 
   @ApiOperation({ summary: 'Deactivation car' })
@@ -138,7 +139,7 @@ export class CarController {
     @CurrentUser() userData: IUserData,
     @Param('idCar') idCar: string,
   ): Promise<CarEntity> {
-    return this.carService.deactivationCar(userData, idCar);
+    return await this.carService.deactivationCar(userData, idCar);
   }
 
   @ApiOperation({ summary: 'Delete car' })
@@ -148,7 +149,7 @@ export class CarController {
     @CurrentUser() userData: IUserData,
     @Param('idCar') idCar: string,
   ): Promise<void> {
-    return this.carService.deleteCar(userData, idCar);
+    return await this.carService.deleteCar(userData, idCar);
   }
 
   @ApiOperation({ summary: 'Upload-photos car' })
@@ -180,12 +181,12 @@ export class CarController {
   @ApiOperation({ summary: 'Delete car photo' })
   @Delete('delete-photo/:carId')
   async deletePhoto(
-      @Param('carId') carId: string,
-      @Query('photoPath') photoPath: string,
+    @Param('carId') carId: string,
+    @Query('photoPath') photoPath: string,
   ): Promise<{ message: string }> {
     Logger.log(`Deleting photo for carId: ${carId}, photoPath: ${photoPath}`);
     try {
-      await this.carService.deletePhotoPath(carId, decodeURIComponent(photoPath));
+      await this.carService.deletePhotoPath(carId, photoPath);
       return { message: 'Photo deleted successfully' };
     } catch (error) {
       return { message: `Error deleting photo: ${error.message}` };

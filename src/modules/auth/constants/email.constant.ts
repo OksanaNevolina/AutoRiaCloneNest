@@ -9,7 +9,7 @@ export const emailTemplates = {
     templateName: 'report',
     subject: 'Report brand and model',
   },
-  [ EmailActionEnum.VOCABULARY]: {
+  [EmailActionEnum.VOCABULARY]: {
     templateName: 'vocabulary',
     subject: 'Report vocabulary',
   },

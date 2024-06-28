@@ -1,5 +1,3 @@
-import { UserService } from './services/user.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -10,16 +8,19 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IUserData } from '../auth/interfaces/user-data.interface';
-import { UserResponseDto } from './dto/response/user.response.dto';
-import { UpdateUserRequestDto } from './dto/request/update-user.request.dto';
-import { CreateManagerRequestDto } from './dto/request/create-manager.request.dto';
-import { AdminService } from './services/admin.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { ManagerGuard } from '../auth/guards/manager.guard';
+import { IUserData } from '../auth/interfaces/user-data.interface';
+import { CreateManagerRequestDto } from './dto/request/create-manager.request.dto';
+import { UpdateUserRequestDto } from './dto/request/update-user.request.dto';
+import { UserResponseDto } from './dto/response/user.response.dto';
+import { AccountService } from './services/account.service';
+import { AdminService } from './services/admin.service';
 import { ManagerService } from './services/manager.service';
-import {AccountService} from "./services/account.service";
-import {ManagerGuard} from "../auth/guards/manager.guard";
+import { UserService } from './services/user.service';
 
 @ApiTags('User')
 @Controller('user')
@@ -88,9 +89,7 @@ export class UserController {
   @Put('upgrade-to-premium/:userId')
   public async upgradeToPremium(
     @Param('userId') userId: string,
-    @CurrentUser() userData: IUserData
   ): Promise<UserResponseDto> {
     return await this.accountService.upgradeToPremium(userId);
   }
-
 }

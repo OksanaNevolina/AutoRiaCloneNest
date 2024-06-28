@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { Config, JWTConfig } from '../../../configs/config.type';
+import { RoleEnum } from '../../../database/enums/role-enum';
 import { TokenResponseDto } from '../dto/response/token.response.dto';
+import { ActionTokenTypeEnum } from '../enums/action-token-type.enum';
 import { TokenType } from '../enums/token-type.enum';
 import { JwtPayload } from '../types/jwt-payload.type';
-import { RoleEnum } from '../../../database/enums/role-enum';
-import { ActionTokenTypeEnum } from '../enums/action-token-type.enum';
 
 @Injectable()
 export class TokenService {

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
+
 import { ViewLogEntity } from '../../../database/entities/viewLog.entity';
 
 @Injectable()

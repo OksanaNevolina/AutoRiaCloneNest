@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
 import { DataSource, Repository } from 'typeorm';
-import { CarEntity } from '../../../database/entities/car.entity';
-import {IPaginationResponseDto, IQuery} from "../../car/types/pagination.type";
-import {ICar} from "../../car/types/car.type";
-import { paginate, IPaginationOptions } from 'nestjs-typeorm-paginate';
 
+import { CarEntity } from '../../../database/entities/car.entity';
+import { ICar } from '../../car/types/car.type';
+import {
+  IPaginationResponseDto,
+  IQuery,
+} from '../../car/types/pagination.type';
 
 @Injectable()
 export class CarRepository extends Repository<CarEntity> {
@@ -16,7 +19,7 @@ export class CarRepository extends Repository<CarEntity> {
     const {
       page = 1,
       limit = 2,
-      sortedBy = "created",
+      sortedBy = 'created',
       ...searchObject
     } = query;
 
@@ -28,9 +31,9 @@ export class CarRepository extends Repository<CarEntity> {
 
     const carPagination = await paginate<CarEntity>(this, options, {
       where: searchObject,
-      order: {[sortedBy]: 'ASC'},
+      order: { [sortedBy]: 'ASC' },
     });
-    const data:any = carPagination.items.map(car => ({
+    const data: any = carPagination.items.map((car) => ({
       id: car.id,
       name: car.name,
       description: car.description,
@@ -54,19 +57,20 @@ export class CarRepository extends Repository<CarEntity> {
     };
   }
 
-  async findCarsWithBrandAndModelByRegion(region: string): Promise<CarEntity[]> {
-    return this.createQueryBuilder('car')
-        .leftJoinAndSelect('car.brand', 'brand')
-        .leftJoinAndSelect('car.model', 'model')
-        .where('car.region = :region', { region })
-        .getMany();
+  async findCarsWithBrandAndModelByRegion(
+    region: string,
+  ): Promise<CarEntity[]> {
+    return await this.createQueryBuilder('car')
+      .leftJoinAndSelect('car.brand', 'brand')
+      .leftJoinAndSelect('car.model', 'model')
+      .where('car.region = :region', { region })
+      .getMany();
   }
 
   async findCarsWithViewsLog(idCar: string): Promise<CarEntity> {
-    return this.createQueryBuilder('car')
-        .leftJoinAndSelect('car.viewsLog', 'viewsLog')
-        .where('car.id = :idCar', { idCar })
-        .getOne();
+    return await this.createQueryBuilder('car')
+      .leftJoinAndSelect('car.viewsLog', 'viewsLog')
+      .where('car.id = :idCar', { idCar })
+      .getOne();
   }
-
 }

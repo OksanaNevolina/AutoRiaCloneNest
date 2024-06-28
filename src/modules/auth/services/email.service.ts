@@ -1,17 +1,17 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Transporter } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import * as hbs from 'nodemailer-express-handlebars';
 import * as path from 'path';
-import * as nodemailer from 'nodemailer';
 
-import { emailTemplates } from '../constants/email.constant';
-import { EmailActionEnum } from '../enums/email-action.enum';
-import { Injectable } from '@nestjs/common';
 import {
   Config,
   frontURLConfig,
   SMTPConfig,
 } from '../../../configs/config.type';
-import { ConfigService } from '@nestjs/config';
+import { emailTemplates } from '../constants/email.constant';
+import { EmailActionEnum } from '../enums/email-action.enum';
 
 @Injectable()
 export class EmailService {

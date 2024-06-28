@@ -1,4 +1,4 @@
 export enum TypeFileUploadEnum {
-    User = "user",
-    CarPhotos = "CarPhotos",
+  User = 'user',
+  CarPhotos = 'CarPhotos',
 }

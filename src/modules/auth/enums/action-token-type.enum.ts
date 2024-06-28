@@ -1,3 +1,3 @@
-export enum ActionTokenTypeEnum{
-    FORGOT = "forgot"
+export enum ActionTokenTypeEnum {
+  FORGOT = 'forgot',
 }
