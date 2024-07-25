@@ -23,5 +23,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /dist/
 
 
-/environments/
+/environments/local.env
 node_modules
